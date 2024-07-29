@@ -1,0 +1,273 @@
+---
+title: "Comparing GCAM soil organic carbon predictions to empirical land use results"
+output: bookdown::html_document2
+date: "`r format(Sys.time(), '%d %B %Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Methods
+
+To begin the analysis, SOC data was taken from a basic run of GCAM, called a reference scenario. This models “business as usual” for the world, without any extra climate policies and assuming a certain level of overall warming. This GitHub repository contains all relevant data from this reference scenario used in our analysis, which was performed using R. Note that the SOC data, GCAM's soil timescale list, as well as both the geopolitical regions list and the land use regions list are separate files, and must be merged before any additional steps can be performed. Below is the code used to load the data and libraries, as well as to merge the four files listed above. The final product is a data set where each SOC data point has an associated timescale value, land use region, and geopolitical region.
+
+```{r Read-In-GCAM-Data, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(metafor)
+library(tidyr)
+
+
+#GCAM's SOC data
+soilC <- read.csv(file = 'Data/GCAM_soilC.csv')
+
+#GCAM's soil timescale list
+read.csv(file = 'Data/soil_timescales.csv') %>%
+  mutate(GCAM_region_ID = seq(1,32,by=1))-> timescales
+
+#GCAM's land use region list 
+glus <- read.csv(file = 'Data/GLU_codes.csv')
+
+#GCAM's geopolitical region list
+regions <- read.csv('Data/GCAM_regions.csv')
+
+#Merging the four above data sets
+soilC %>%
+  mutate(GLU_code = GLU) %>%
+  right_join(glus, by='GLU_code') %>%
+  right_join(regions, by='GCAM_region_ID') %>%
+  right_join(timescales, by='GCAM_region_ID')-> soilC_regions
+```
+
+Much of the data contained within the SOC data set is irrelevant to this analysis, so it was removed.
+
+```{r Select-relevant-data}
+soilC_regions %>%
+  select(Land_Type, soil_c, GLU_code, soilTimeScale, GCAM_region_ID, Basin_long_name) -> simple_soilC_regions
+```
+
+The experimental data compared to GCAM's outputs was taken from Post & Kwon (2000) and Wei et al. (2014), both reviews of  SOC measurements from the past 70 years. This data was manually digitized into a CSV file for analysis. This data did not explicitly list site locations for each measurement, so this information was determined from the paper referenced by the two studies. Once the location was determined, it was compared to GCAM's 384 land use regions using the rmap tool and GCAM's basin code mapping file. Then, the GLU code was manually added to the digitized data from Post & Kwon.  
+
+Once fully digitized, the experimental data was loaded into R as well. Note that there were several entries with missing timeframes or where the location of the sample could not be determined. These were assigned a value of 'NA'. 
+
+```{r Read-In-Experimental-Data}
+PostKwon <- read.csv(file= 'Data/Experimental Data.csv', na.strings = c("", "NA"))
+Wei <- read.csv(file= 'Data/Wei et al Data.csv', na.strings = c("", "NA"))
+
+```
+
+Once the experimental data was loaded in, each observation was mapped to is corresponding GCAM data point. This was done by simply adding the previously created GCAM data set to the experimental one by land use region, geopolitical region, and land use. This process was done twice--once for the initial land use and once for the final land use. This meant that, ultimately, each experimental data point had two associated GCAM SOC values--one for the initial land use, and one for the final land use.  
+
+This then allowed us to compute the GCAM SOC rate during land use change. This was done by simply subtracting the initial SOC value from the final value and dividing that by GCAMs soil timescale parameter. Finally, the k value (explained in depth in Wei et al.) was computed for both the experimental and GCAM data. The experimental and GCAM k values were computed using equations 1 and 2, respectively, below.
+\begin{equation}
+\tag{1}
+k = -\frac{ln \left(\frac{C_f}{C_0}\right)}{t}
+\end{equation}
+
+\begin{equation}
+\tag{2}
+k = -\frac{ln (Rate \times t + 1)}{t}
+\end{equation}
+
+\newline
+Experimental data from Wei et al. did not contain any raw rate information. Instead, the study only reported percent decrease in SOC concentration. This means we were only able to compare k values between the Wei et. al. data and GCAM. Additionally, k had to be computed with a modified equation, 3, below. 
+
+\begin{equation}
+\tag{3}
+k = -\frac{ln \left(\frac{1}{\frac{|OC Decrease|}{100} + 1}\right)}{t}
+\end{equation}
+
+The code for merging the GCAM and experimental, as well as for computing the rate and k value is below. The process was the same for the Wei et al. data. 
+
+```{r create_comparison_Post_Kwon}
+PostKwon %>%
+  select(Initial_Land_Use, Final_Land_Use, GLU_code, GCAM_region_ID, Time, Exp_Rate) %>%
+  na.omit() %>%
+  mutate(Land_Type = Initial_Land_Use) %>%
+  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  rename(initial_soil_c = soil_c) %>%
+  select(-Land_Type) %>%
+  mutate(Land_Type = Final_Land_Use) %>%
+  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  rename(final_soil_c = soil_c) %>%
+  select(-Land_Type, -soilTimeScale.x, -Basin_long_name.x) %>%
+  rename(soilTimeScale = soilTimeScale.y, Basin_long_name = Basin_long_name.y) %>%
+  na.omit() %>%
+  mutate(GCAM_Rate = (final_soil_c - initial_soil_c)/soilTimeScale, Rate_Difference = Exp_Rate - GCAM_Rate, 
+         Exp_k = -log(abs(Exp_Rate)*Time +1)/Time,
+         GCAM_k = -log(final_soil_c/initial_soil_c)/soilTimeScale, 
+         source = 'Post & Kwon'
+  ) %>%
+  #This next line corrects the sign of Exp_k--we had to take the absolute value to avoid NaNs, so this accounts for that 
+  #This did not have to be done for the GCAM_k because the argument inside the natural log will always be positive--it is a positive value divided by another positive value--so sign correction was not necesary. 
+  mutate(Exp_k = ifelse(sign(Exp_k) == sign(Exp_Rate), Exp_k*(-1), Exp_k)) -> PostKwon_Comparison
+```
+
+Note that, because of how the k value is computed for the experimental data, the sign was often mismatched. The sign of k corresponds to the opposite of the sign of the rate, which had to be corrected manually.  
+
+
+
+```{r create_comparison_Wei, echo = FALSE}
+#Creating Wei comparison data
+Wei %>%
+  select(Initial_Land_Use, Final_Land_Use, GLU_code, GCAM_region_ID, OC_decrease, Time) %>%
+  na.omit() %>%
+  mutate(Land_Type = Initial_Land_Use) %>%
+  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  rename(initial_soil_c = soil_c) %>%
+  select(-Land_Type) %>%
+  mutate(Land_Type = Final_Land_Use) %>%
+  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  rename(final_soil_c = soil_c) %>%
+  select(-Land_Type, -soilTimeScale.x, -Basin_long_name.x) %>%
+  rename(soilTimeScale = soilTimeScale.y, Basin_long_name = Basin_long_name.y) %>%
+  na.omit() %>%
+  mutate(GCAM_Rate = (final_soil_c - initial_soil_c)/soilTimeScale,
+         GCAM_k = -log(final_soil_c/initial_soil_c)/soilTimeScale,
+         Exp_k = -log(1/((abs(OC_decrease)/100) +1))/Time,
+         source = 'Wei et al'
+  ) %>%
+  #This next line corrects the sign of Exp_k--we had to take the absolute value to avoid NaNs, so this accounts for that 
+  mutate(Exp_k = ifelse(sign(Exp_k) == sign(OC_decrease), Exp_k, Exp_k*(-1))) -> Wei_Comparison
+```
+
+
+\Newline
+Once the experimental data was matched to its corresponding GCAM outputs, the two data sets (Post& Kwon and Wei et al.) were merged. Importantly, because the rate data does not exist for Wei et al., the rate data was not included in the aggregated data set. 
+
+```{r Create-Full-Comparison}
+Full_Comparison <- bind_rows(
+  select(PostKwon_Comparison, -Exp_Rate, -Rate_Difference),
+  select(Wei_Comparison, -OC_decrease)
+  )
+```
+
+Once  the k values were calculated, t-tests and ANOVAs were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
+
+```{r Merge_Data_and_add_transition}
+Full_Comparison %>%
+  pivot_longer(cols = Exp_k:GCAM_k,
+               names_to = "Type",
+               values_to = "k") -> full_long_data 
+
+full_long_data %>% 
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = '')) -> change_long_data
+```
+Then, the ANOVAs could be performed. The Akaike information criterion was used to assess which ANOVA best captured the data.
+
+```{r All_Anovas, echo = TRUE, results = 'hide', warning=FALSE}
+#Type + Basin (no average)
+aov_Full <- aov(k ~ Type + Basin_long_name ,
+                      data = full_long_data)
+summary(aov_Full)
+TukeyHSD(aov_Full)
+AIC(aov_Full)
+
+
+#Type + Change (no average)
+aov_Full_change <- aov(k ~ Type + change,
+                      data = change_long_data)
+summary(aov_Full_change)
+TukeyHSD(aov_Full_change)
+AIC(aov_Full_change)
+
+#Type * Change (no average)
+aov_Full_change_times <- aov(k ~ Type * change,
+                       data = change_long_data)
+summary(aov_Full_change_times)
+TukeyHSD(aov_Full_change_times)
+AIC(aov_Full_change_times)
+
+#Type + Basin + change
+aov_big <- aov(k ~ Type + Basin_long_name + change,
+               data = change_long_data)
+summary(aov_big)
+TukeyHSD(aov_big)
+AIC(aov_big)
+
+
+
+#Now, we'll do some averages
+#Type + change (averaged by change)
+change_long_data %>%
+  group_by(Type, change) %>%
+  summarize(mean_k = mean(k), std_dev_k = sd(k)) -> change_grouped_long
+
+aov_change <- aov(mean_k ~ Type + change,
+               data = change_grouped_long)
+summary(aov_change)
+TukeyHSD(aov_change)
+AIC(aov_change)
+
+
+#Type + Basin (averaged by basin)
+#Average by region
+change_long_data %>%
+  group_by(Type, Basin_long_name) %>%
+  summarize(mean_k = mean(k), std_dev_k = sd(k)) -> basin_grouped_long
+
+aov_basin <- aov(mean_k ~ Type + Basin_long_name,
+                  data = basin_grouped_long)
+summary(aov_basin)
+AIC(aov_basin)
+```
+
+
+# Results
+Overall, GCAMs rate and k value outputs matched experimental values. 
+```{r k-Histogram-full, echo=FALSE, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
+#Plot overlapping k histograms for the different k sources
+ggplot() +
+  geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
+  geom_histogram(aes(x = Full_Comparison$GCAM_k,  fill = 'GCAM'), alpha = 0.5, bins = 75) +
+  xlab(expression(k~(y^-1))) + ylab('Count') +
+  scale_fill_manual(name = "Data Source", 
+                    values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
+  theme_light() 
+```
+
+
+Several t-tests were also performed. One was performed on each of the different k value sources (Post & Kwon, Wei et al., and the aggregated data), and another was performed on the Post & Kwon rate data. The difference was significantly significant for the Post & Kwon and Wei et al. data individually, but not for aggregated k values.   
+```{r t-test-Post-Kwon}
+t.test(PostKwon_Comparison$Exp_k, PostKwon_Comparison$GCAM_k, alternative = 'two.sided')
+```
+
+```{r t-test-Wei}
+t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided') 
+
+```
+
+```{r t-test-full}
+t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
+```
+
+Based on the AIC for each ANOVA, the tests accounting for data source + transition type and data soruce + basin + transition type were used. These tests whoed no significant difference in means based on data source. 
+
+```{r}
+summary(aov_Full_change)
+
+summary(aov_big)
+```
+
+
+The average of the difference in means between k values was also plotted, grouped by transition type:
+
+```{r Mean_Difference_by_Transition}
+#Make the mean graph
+Full_Comparison %>%
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = ' to ')) %>%
+  mutate(difference = Exp_k - GCAM_k) %>%
+  group_by(change) %>%
+  summarise(Mean_k = mean(difference), std_dev = sd(difference), Sample_Size = n()) -> mean_difference
+
+ggplot(mean_difference, aes(x = Mean_k, y = change)) +
+  geom_point(aes(size = Sample_Size), shape = 15) +
+  labs(x = 'k', y = 'Transition Type') +
+  geom_errorbar(aes(xmin=Mean_k - std_dev, xmax=Mean_k + std_dev), width=.2,
+                position=position_dodge(0.05)) +
+  xlim(-0.1, 0.1) +
+  geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
+  theme_light() 
+```
+
