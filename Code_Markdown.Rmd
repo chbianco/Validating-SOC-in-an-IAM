@@ -242,7 +242,7 @@ t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided')
 t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
 ```
 
-Based on the AIC for each ANOVA, the tests accounting for data source + transition type and data soruce + basin + transition type were used. These tests whoed no significant difference in means based on data source. 
+Based on the AIC for each ANOVA, the tests accounting for data source + transition type and data source + basin + transition type were used. These tests whoed no significant difference in means based on data source. 
 
 ```{r}
 summary(aov_Full_change)
