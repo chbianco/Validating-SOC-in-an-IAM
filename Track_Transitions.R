@@ -12,6 +12,7 @@ all_transitions %>%
 simple_land <- function(land){
   if(grepl('forest', land)){return('Forest')}
   else if(grepl('grassland', land)){return('Grassland')}
+  else if(grepl('biomass', land)){return('Biomass')}
   else if(grepl('rockicedesert', land)){return('RockIceDesert')}
   else if(grepl('shrub', land)){return('Shrubland')}
   else if(grepl('tundra',land)){return('Tundra')}
@@ -61,7 +62,7 @@ transitions %>%
 ggplot(data = total_transitions_gcam32, aes(x=total_skqm_change, y=change)) + 
   geom_bar(stat='identity') + 
   facet_wrap(~region_id)
- 
+
 #Plot in total
 ggplot(data = total_transitions, aes(x = total_skqm_change, y = change)) + 
   geom_bar(stat='identity') + 
@@ -73,17 +74,17 @@ ggsave('total_transitions_bar.jpeg', path = 'Graphs')
 
 
 #Now, we do this for only after to see what is more common in the future
-transitions_soon <- filter(transitions, year > 2015) 
+transitions_future <- filter(transitions, year > 2015) 
 
-transitions_soon %>%  
+transitions_future %>%  
   group_by(change) %>%
   summarize(sum(sqkm_change)) %>%
   rename(total_skqm_change = `sum(sqkm_change)`) %>%
   arrange(desc(total_skqm_change)) %>%
-  filter(total_skqm_change > 10000)-> total_transitions_soon
+  filter(total_skqm_change > 120000)-> total_transitions_future
 
 #Plot in total for only transitions after 2015
-ggplot(data = total_transitions_soon, aes(x = total_skqm_change, y = change)) + 
+ggplot(data = total_transitions_future, aes(x = total_skqm_change, y = change)) + 
   geom_bar(stat='identity') + 
   xlab(expression(Total~area~transitioned~(km^2))) + ylab('Transition Type') +
   theme_light() 
@@ -121,6 +122,6 @@ transitions_soon %>%
   rename(total_skqm_change = `sum(sqkm_change)`) %>%
   arrange(desc(total_skqm_change)) %>%
   ggplot(aes(x=total_skqm_change, y=change)) + 
-    geom_bar(stat = 'identity')
-    
+  geom_bar(stat = 'identity')
+
 
