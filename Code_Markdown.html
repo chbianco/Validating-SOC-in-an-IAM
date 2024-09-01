@@ -427,8 +427,3904 @@ k = -\frac{ln \left(\frac{1}{\frac{|OC Decrease|}{100} + 1}\right)}{t}
 
 full_long_data %&gt;% 
   mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = &#39;&#39;)) -&gt; change_long_data</code></pre>
+<p>We also checked if the variances were equal.</p>
+<pre class="r"><code>vars = var.test(k ~ Type, data = change_long_data)</code></pre>
+<p>They were not, so we performed some individual Welch’s t-tests to check if the aov function was sufficiently robust to handle deviations in variance. If these results matched those from the ANOVAs, we could say that the ANOVA results were not significantly affected by unequal variances.</p>
+<div id="basic-characteristics-of-data-decent-number-points." class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> Basic characteristics of data, decent number points.</h2>
+<p>Look at the basic characteristics of the data, and specifically filter
+down to basins with at least 3 data points (3 transitions of any kind).
+You can make this a little stricter by uncommenting out all the lines with
+<code>change</code> - that would say we only consider basins with at least 3 of the same
+kind of transition.</p>
+<pre class="r"><code>knitr::kable(head(change_long_data))</code></pre>
+<table>
+<colgroup>
+<col width="9%" />
+<col width="8%" />
+<col width="5%" />
+<col width="8%" />
+<col width="2%" />
+<col width="8%" />
+<col width="7%" />
+<col width="7%" />
+<col width="10%" />
+<col width="5%" />
+<col width="6%" />
+<col width="3%" />
+<col width="6%" />
+<col width="9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Initial_Land_Use</th>
+<th align="left">Final_Land_Use</th>
+<th align="left">GLU_code</th>
+<th align="right">GCAM_region_ID</th>
+<th align="right">Time</th>
+<th align="right">initial_soil_c</th>
+<th align="right">final_soil_c</th>
+<th align="right">soilTimeScale</th>
+<th align="left">Basin_long_name</th>
+<th align="right">GCAM_Rate</th>
+<th align="left">source</th>
+<th align="left">Type</th>
+<th align="right">k</th>
+<th align="left">change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.97474</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0040098</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.97474</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0079207</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.97474</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0026030</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.97474</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0079207</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="left">UrbanLand</td>
+<td align="left">Forest</td>
+<td align="left">GLU232</td>
+<td align="right">8</td>
+<td align="right">100</td>
+<td align="right">5.8000</td>
+<td align="right">17.72953</td>
+<td align="right">75</td>
+<td align="left">New_England_Basin</td>
+<td align="right">0.1590604</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0128923</td>
+<td align="left">UrbanLandForest</td>
+</tr>
+<tr class="even">
+<td align="left">UrbanLand</td>
+<td align="left">Forest</td>
+<td align="left">GLU232</td>
+<td align="right">8</td>
+<td align="right">100</td>
+<td align="right">5.8000</td>
+<td align="right">17.72953</td>
+<td align="right">75</td>
+<td align="left">New_England_Basin</td>
+<td align="right">0.1590604</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0148983</td>
+<td align="left">UrbanLandForest</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>change_long_data %&gt;%
+  group_by(Basin_long_name, change, Type) %&gt;%
+  summarise(n_points  = n()) %&gt;%
+  ungroup %&gt;%
+  knitr::kable(.)</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;Basin_long_name&#39;, &#39;change&#39;. You can
+## override using the `.groups` argument.</code></pre>
+<table style="width:100%;">
+<colgroup>
+<col width="51%" />
+<col width="25%" />
+<col width="10%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Basin_long_name</th>
+<th align="left">change</th>
+<th align="left">Type</th>
+<th align="right">n_points</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">Amazon</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">Amazon</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">Amazon</td>
+<td align="left">ForestPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">14</td>
+</tr>
+<tr class="even">
+<td align="left">Amazon</td>
+<td align="left">ForestPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Arkansas_White_Red_Basin</td>
+<td align="left">CroplandGrassland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Arkansas_White_Red_Basin</td>
+<td align="left">CroplandGrassland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Bay_of_Bengal_North_East_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Bay_of_Bengal_North_East_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Brahmani</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">Brahmani</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">Caribbean</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Caribbean</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Chao_Phraya</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Chao_Phraya</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">China_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">China_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Dnieper</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Dnieper</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">CroplandForest</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">CroplandForest</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Guadiana</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Guadiana</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Hainan</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Hainan</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Hong_(Red_River)</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Hong_(Red_River)</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Huang_He</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Huang_He</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Krishna</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Krishna</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">La_Plata</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">La_Plata</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">PastureForest</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">PastureForest</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">PastureShrubland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">PastureShrubland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Madagascar</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Madagascar</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Mahanadi</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Mahanadi</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Mekong</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Mekong</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">CroplandGrassland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">CroplandGrassland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">CroplandPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">CroplandPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Murray_Darling</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Murray_Darling</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">New_England_Basin</td>
+<td align="left">UrbanLandForest</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">New_England_Basin</td>
+<td align="left">UrbanLandForest</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Niger</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Niger</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Nile</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Nile</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Ohio_River_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Ohio_River_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Pacific_Northwest_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Pacific_Northwest_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Pampas_Region</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Pampas_Region</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Peninsula_Malaysia</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Peninsula_Malaysia</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Philippines</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">Philippines</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">11</td>
+</tr>
+<tr class="odd">
+<td align="left">Rift_Valley</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Rift_Valley</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Sao_Francisco</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">Sao_Francisco</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">Saskatchewan_Nelson</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Saskatchewan_Nelson</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Senegal</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Senegal</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Shebelli_Juba</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="left">Shebelli_Juba</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">9</td>
+</tr>
+<tr class="even">
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">CroplandForest</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">CroplandForest</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">7</td>
+</tr>
+<tr class="odd">
+<td align="left">Southern_Central_America</td>
+<td align="left">CroplandForest</td>
+<td align="left">Exp_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="left">Southern_Central_America</td>
+<td align="left">CroplandForest</td>
+<td align="left">GCAM_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="left">Southern_Central_America</td>
+<td align="left">CroplandPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">Southern_Central_America</td>
+<td align="left">CroplandPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">Southern_Central_America</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="left">Southern_Central_America</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td align="left">Southern_Central_America</td>
+<td align="left">ForestPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">Southern_Central_America</td>
+<td align="left">ForestPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Sumatra</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Sumatra</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+</tr>
+<tr class="odd">
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestPasture</td>
+<td align="left">Exp_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">ForestPasture</td>
+<td align="left">GCAM_k</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">ForestCropland</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">ForestCropland</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>change_long_data %&gt;%
+  group_by(Basin_long_name, 
+           #change,
+           Type) %&gt;%
+  summarise(n_points  = n()) %&gt;%
+  ungroup %&gt;%
+  filter(n_points &gt;1)  %&gt;%
+   mutate(joint_id = paste(Basin_long_name,
+                           #change, 
+                           sep = &#39;~&#39;)) -&gt;
+  decent_num_points</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;Basin_long_name&#39;. You can override using
+## the `.groups` argument.</code></pre>
+<pre class="r"><code>knitr::kable(decent_num_points)</code></pre>
+<table>
+<colgroup>
+<col width="40%" />
+<col width="7%" />
+<col width="10%" />
+<col width="40%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Basin_long_name</th>
+<th align="left">Type</th>
+<th align="right">n_points</th>
+<th align="left">joint_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">7</td>
+<td align="left">Africa_East_Central_Coast</td>
+</tr>
+<tr class="even">
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">7</td>
+<td align="left">Africa_East_Central_Coast</td>
+</tr>
+<tr class="odd">
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">21</td>
+<td align="left">Amazon</td>
+</tr>
+<tr class="even">
+<td align="left">Amazon</td>
+<td align="left">GCAM_k</td>
+<td align="right">21</td>
+<td align="left">Amazon</td>
+</tr>
+<tr class="odd">
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+</tr>
+<tr class="even">
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+</tr>
+<tr class="odd">
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">10</td>
+<td align="left">Brahmani</td>
+</tr>
+<tr class="even">
+<td align="left">Brahmani</td>
+<td align="left">GCAM_k</td>
+<td align="right">10</td>
+<td align="left">Brahmani</td>
+</tr>
+<tr class="odd">
+<td align="left">Caribbean</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Caribbean</td>
+</tr>
+<tr class="even">
+<td align="left">Caribbean</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Caribbean</td>
+</tr>
+<tr class="odd">
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="even">
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="odd">
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+<td align="left">Ganges_Bramaputra</td>
+</tr>
+<tr class="even">
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+<td align="left">Ganges_Bramaputra</td>
+</tr>
+<tr class="odd">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+<td align="left">Grijalva_Usumacinta</td>
+</tr>
+<tr class="even">
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+<td align="left">Grijalva_Usumacinta</td>
+</tr>
+<tr class="odd">
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+<td align="left">Gulf_of_Guinea</td>
+</tr>
+<tr class="even">
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+<td align="left">Gulf_of_Guinea</td>
+</tr>
+<tr class="odd">
+<td align="left">Hainan</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Hainan</td>
+</tr>
+<tr class="even">
+<td align="left">Hainan</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Hainan</td>
+</tr>
+<tr class="odd">
+<td align="left">Hong_(Red_River)</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Hong_(Red_River)</td>
+</tr>
+<tr class="even">
+<td align="left">Hong_(Red_River)</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Hong_(Red_River)</td>
+</tr>
+<tr class="odd">
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+</tr>
+<tr class="even">
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+</tr>
+<tr class="odd">
+<td align="left">Krishna</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Krishna</td>
+</tr>
+<tr class="even">
+<td align="left">Krishna</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Krishna</td>
+</tr>
+<tr class="odd">
+<td align="left">La_Plata</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">La_Plata</td>
+</tr>
+<tr class="even">
+<td align="left">La_Plata</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">La_Plata</td>
+</tr>
+<tr class="odd">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Madagascar</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Madagascar</td>
+</tr>
+<tr class="even">
+<td align="left">Madagascar</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Madagascar</td>
+</tr>
+<tr class="odd">
+<td align="left">Mekong</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Mekong</td>
+</tr>
+<tr class="even">
+<td align="left">Mekong</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Mekong</td>
+</tr>
+<tr class="odd">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">7</td>
+<td align="left">Missouri_River_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Missouri_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">7</td>
+<td align="left">Missouri_River_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Niger</td>
+</tr>
+<tr class="even">
+<td align="left">Niger</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Niger</td>
+</tr>
+<tr class="odd">
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Nile</td>
+</tr>
+<tr class="even">
+<td align="left">Nile</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Nile</td>
+</tr>
+<tr class="odd">
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="even">
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="odd">
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Ohio_River_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Ohio_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Ohio_River_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Pampas_Region</td>
+<td align="left">Exp_k</td>
+<td align="right">3</td>
+<td align="left">Pampas_Region</td>
+</tr>
+<tr class="even">
+<td align="left">Pampas_Region</td>
+<td align="left">GCAM_k</td>
+<td align="right">3</td>
+<td align="left">Pampas_Region</td>
+</tr>
+<tr class="odd">
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">11</td>
+<td align="left">Philippines</td>
+</tr>
+<tr class="even">
+<td align="left">Philippines</td>
+<td align="left">GCAM_k</td>
+<td align="right">11</td>
+<td align="left">Philippines</td>
+</tr>
+<tr class="odd">
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Rift_Valley</td>
+</tr>
+<tr class="even">
+<td align="left">Rift_Valley</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Rift_Valley</td>
+</tr>
+<tr class="odd">
+<td align="left">Sao_Francisco</td>
+<td align="left">Exp_k</td>
+<td align="right">4</td>
+<td align="left">Sao_Francisco</td>
+</tr>
+<tr class="even">
+<td align="left">Sao_Francisco</td>
+<td align="left">GCAM_k</td>
+<td align="right">4</td>
+<td align="left">Sao_Francisco</td>
+</tr>
+<tr class="odd">
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Senegal</td>
+</tr>
+<tr class="even">
+<td align="left">Senegal</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Senegal</td>
+</tr>
+<tr class="odd">
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">6</td>
+<td align="left">Shebelli_Juba</td>
+</tr>
+<tr class="even">
+<td align="left">Shebelli_Juba</td>
+<td align="left">GCAM_k</td>
+<td align="right">6</td>
+<td align="left">Shebelli_Juba</td>
+</tr>
+<tr class="odd">
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">9</td>
+<td align="left">South_Africa_South_Coast</td>
+</tr>
+<tr class="even">
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">9</td>
+<td align="left">South_Africa_South_Coast</td>
+</tr>
+<tr class="odd">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">11</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">11</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">25</td>
+<td align="left">Southern_Central_America</td>
+</tr>
+<tr class="even">
+<td align="left">Southern_Central_America</td>
+<td align="left">GCAM_k</td>
+<td align="right">25</td>
+<td align="left">Southern_Central_America</td>
+</tr>
+<tr class="odd">
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">5</td>
+<td align="left">Sumatra</td>
+</tr>
+<tr class="even">
+<td align="left">Sumatra</td>
+<td align="left">GCAM_k</td>
+<td align="right">5</td>
+<td align="left">Sumatra</td>
+</tr>
+<tr class="odd">
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">10</td>
+<td align="left">Upper_Mississippi_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">10</td>
+<td align="left">Upper_Mississippi_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="even">
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+</tr>
+<tr class="odd">
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">Exp_k</td>
+<td align="right">2</td>
+<td align="left">Yucatan_Peninsula</td>
+</tr>
+<tr class="even">
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">GCAM_k</td>
+<td align="right">2</td>
+<td align="left">Yucatan_Peninsula</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>change_long_data %&gt;%
+  mutate(joint_id = paste(Basin_long_name, 
+                          #change,
+                          sep = &#39;~&#39;)) %&gt;%
+  filter(joint_id %in% unique(decent_num_points$joint_id)) -&gt;
+  data_for_analysis
+
+knitr::kable(head(data_for_analysis))</code></pre>
+<table>
+<colgroup>
+<col width="7%" />
+<col width="6%" />
+<col width="4%" />
+<col width="6%" />
+<col width="2%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="12%" />
+<col width="5%" />
+<col width="5%" />
+<col width="3%" />
+<col width="5%" />
+<col width="7%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Initial_Land_Use</th>
+<th align="left">Final_Land_Use</th>
+<th align="left">GLU_code</th>
+<th align="right">GCAM_region_ID</th>
+<th align="right">Time</th>
+<th align="right">initial_soil_c</th>
+<th align="right">final_soil_c</th>
+<th align="right">soilTimeScale</th>
+<th align="left">Basin_long_name</th>
+<th align="right">GCAM_Rate</th>
+<th align="left">source</th>
+<th align="left">Type</th>
+<th align="right">k</th>
+<th align="left">change</th>
+<th align="left">joint_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.974737</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0040098</td>
+<td align="left">CroplandForest</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.974737</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0079207</td>
+<td align="left">CroplandForest</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.974737</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0026030</td>
+<td align="left">CroplandForest</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Cropland</td>
+<td align="left">Forest</td>
+<td align="left">GLU227</td>
+<td align="right">1</td>
+<td align="right">50</td>
+<td align="right">12.0967</td>
+<td align="right">17.974737</td>
+<td align="right">50</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="right">0.1175608</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0079207</td>
+<td align="left">CroplandForest</td>
+<td align="left">Great_Lakes_Basin</td>
+</tr>
+<tr class="odd">
+<td align="left">Pasture</td>
+<td align="left">Shrubland</td>
+<td align="left">GLU221</td>
+<td align="right">1</td>
+<td align="right">18</td>
+<td align="right">4.0000</td>
+<td align="right">3.535076</td>
+<td align="right">50</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="right">-0.0092985</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0087186</td>
+<td align="left">PastureShrubland</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+</tr>
+<tr class="even">
+<td align="left">Pasture</td>
+<td align="left">Shrubland</td>
+<td align="left">GLU221</td>
+<td align="right">1</td>
+<td align="right">18</td>
+<td align="right">4.0000</td>
+<td align="right">3.535076</td>
+<td align="right">50</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="right">-0.0092985</td>
+<td align="left">Post &amp; Kwon</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0024712</td>
+<td align="left">PastureShrubland</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>print( paste(&#39;Basins with at least 3 samples of any transition to validate against:&#39;, length(unique(data_for_analysis$Basin_long_name))))</code></pre>
+<pre><code>## [1] &quot;Basins with at least 3 samples of any transition to validate against: 36&quot;</code></pre>
+</div>
+<div id="t-tests-by-basin" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> t-tests by basin</h2>
+<p>By default, R runs welch’s t-test, which assumes the variances differ between
+groups.</p>
+<pre class="r"><code>basin_pval_holder &lt;- data.frame()
+
+
+for (basin in unique(data_for_analysis$Basin_long_name)){
+  # print(basin)
+  
+  data_for_analysis %&gt;% 
+    filter(Basin_long_name == basin,
+           Type == &#39;GCAM_k&#39;) -&gt;
+    gcam_basin
+  
+  data_for_analysis %&gt;% 
+    filter(Basin_long_name == basin,
+           Type == &#39;Exp_k&#39;) -&gt;
+    exp_basin
+  
+  pval &lt;- t.test(exp_basin$k, gcam_basin$k, alternative = &#39;two.sided&#39;)$p.value
+  
+ # print(paste(&#39;two-sided alternative, t.test pvalue: &#39;, pval))
+ 
+ basin_pval_holder %&gt;%
+   bind_rows(data.frame(basin = basin, p.value = pval), .) -&gt;
+   basin_pval_holder
+}</code></pre>
+</div>
+<div id="interpretation" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> interpretation</h2>
+<p>So regardless of transition type, for basins with at least 3 points of any kind
+of transition recorded, if the p value of the t.test between the experimental
+and GCAM distributions of k is greater than 0.05, we fail to reject the hypothesis
+that the mean of the distribution of k values from GCAM differs from the mean of
+the distribution of k values from experiment.</p>
+<pre class="r"><code>print(paste(&#39;In:&#39; ,
+            length(which(basin_pval_holder$p.value &gt; 0.05)),
+            &#39;of&#39;, nrow(basin_pval_holder), 
+            &#39;basins, we fail to reject the null hypothesis that the means differ.&#39;))</code></pre>
+<pre><code>## [1] &quot;In: 28 of 36 basins, we fail to reject the null hypothesis that the means differ.&quot;</code></pre>
+<p>So it looks like across 21 of 29 basins with decent amount of data to validate,
+GCAM and experiments, we infer the k-values are comparable, suggesting the
+GCAM approach validates well in these basins</p>
+<div id="differing-basins" class="section level3" number="1.3.1">
+<h3><span class="header-section-number">1.3.1</span> differing basins</h3>
+<p>Let’s take a look at the 8 basins that differ.</p>
+<pre class="r"><code>basin_pval_holder %&gt;%
+  filter(p.value &lt;= 0.05) %&gt;%
+  select(basin) -&gt;
+  differing_basins
+
+change_long_data %&gt;%
+  filter(basin %in% differing_basins$basin) %&gt;%
+  select(initial_soil_c, final_soil_c, Basin_long_name, Type, k, change) %&gt;%
+  distinct %&gt;% 
+  knitr::kable(.)</code></pre>
+<table>
+<colgroup>
+<col width="15%" />
+<col width="13%" />
+<col width="36%" />
+<col width="7%" />
+<col width="11%" />
+<col width="18%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">initial_soil_c</th>
+<th align="right">final_soil_c</th>
+<th align="left">Basin_long_name</th>
+<th align="left">Type</th>
+<th align="right">k</th>
+<th align="left">change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">12.096699</td>
+<td align="right">17.974737</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0040098</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">12.096699</td>
+<td align="right">17.974737</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0079207</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">12.096699</td>
+<td align="right">17.974737</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0026030</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">5.800000</td>
+<td align="right">17.729533</td>
+<td align="left">New_England_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0128923</td>
+<td align="left">UrbanLandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">5.800000</td>
+<td align="right">17.729533</td>
+<td align="left">New_England_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0148983</td>
+<td align="left">UrbanLandForest</td>
+</tr>
+<tr class="even">
+<td align="right">4.000000</td>
+<td align="right">3.535076</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0087186</td>
+<td align="left">PastureShrubland</td>
+</tr>
+<tr class="odd">
+<td align="right">4.000000</td>
+<td align="right">3.535076</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0024712</td>
+<td align="left">PastureShrubland</td>
+</tr>
+<tr class="even">
+<td align="right">4.000000</td>
+<td align="right">8.045384</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0057968</td>
+<td align="left">PastureForest</td>
+</tr>
+<tr class="odd">
+<td align="right">4.000000</td>
+<td align="right">8.045384</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0139761</td>
+<td align="left">PastureForest</td>
+</tr>
+<tr class="even">
+<td align="right">4.000000</td>
+<td align="right">3.535076</td>
+<td align="left">Lower_Colorado_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0121681</td>
+<td align="left">PastureShrubland</td>
+</tr>
+<tr class="odd">
+<td align="right">6.974829</td>
+<td align="right">8.859901</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0019602</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">6.974829</td>
+<td align="right">8.859901</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0047846</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">6.974829</td>
+<td align="right">8.859901</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0176754</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">6.974829</td>
+<td align="right">8.859901</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0161295</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">6.974829</td>
+<td align="right">8.859901</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0033633</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0381429</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0151595</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0212942</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0195171</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0244235</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0426833</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">13.951840</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0553328</td>
+<td align="left">CroplandForest</td>
+</tr>
+<tr class="odd">
+<td align="right">4.899702</td>
+<td align="right">7.003030</td>
+<td align="left">Arkansas_White_Red_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0701306</td>
+<td align="left">CroplandGrassland</td>
+</tr>
+<tr class="even">
+<td align="right">4.899702</td>
+<td align="right">7.003030</td>
+<td align="left">Arkansas_White_Red_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0071434</td>
+<td align="left">CroplandGrassland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.665744</td>
+<td align="right">7.999390</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0028820</td>
+<td align="left">CroplandGrassland</td>
+</tr>
+<tr class="even">
+<td align="right">5.665744</td>
+<td align="right">7.999390</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0068985</td>
+<td align="left">CroplandGrassland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.665744</td>
+<td align="right">7.999390</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0000000</td>
+<td align="left">CroplandGrassland</td>
+</tr>
+<tr class="even">
+<td align="right">5.665744</td>
+<td align="right">6.399512</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0066784</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">5.665744</td>
+<td align="right">6.399512</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0024357</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">5.665744</td>
+<td align="right">6.399512</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0175745</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">5.665744</td>
+<td align="right">6.399512</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0132790</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">5.665744</td>
+<td align="right">6.399512</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0301917</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0127052</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">GCAM_k</td>
+<td align="right">-0.0032490</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0278280</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0418260</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0070924</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0236622</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0225132</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0090933</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0339105</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0445577</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.550799</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0173451</td>
+<td align="left">CroplandPasture</td>
+</tr>
+<tr class="even">
+<td align="right">6.987204</td>
+<td align="right">4.788550</td>
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0146354</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">6.987204</td>
+<td align="right">4.788550</td>
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0151141</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">6.987204</td>
+<td align="right">4.788550</td>
+<td align="left">North_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0113737</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">9.773848</td>
+<td align="right">8.000000</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0262364</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">9.773848</td>
+<td align="right">8.000000</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0080107</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0655506</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0053468</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0039567</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0099213</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0196696</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0289821</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0023155</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0619439</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0136196</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0677905</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0125777</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0389662</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0456141</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0146335</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">7.869763</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0274420</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0462752</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">13.951840</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0119104</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0055905</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="odd">
+<td align="right">13.951840</td>
+<td align="right">10.358948</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0271004</td>
+<td align="left">ForestPasture</td>
+</tr>
+<tr class="even">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0017616</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0047846</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0019097</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0024343</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0068779</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0101935</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0084711</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0093855</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0176032</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.643288</td>
+<td align="right">6.443357</td>
+<td align="left">Mekong</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0625205</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.643288</td>
+<td align="right">6.443357</td>
+<td align="left">Mekong</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0161285</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.643288</td>
+<td align="right">6.443357</td>
+<td align="left">Mekong</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0525866</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.643288</td>
+<td align="right">6.443357</td>
+<td align="left">Mekong</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0419209</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.477299</td>
+<td align="right">6.727785</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0046279</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.477299</td>
+<td align="right">6.727785</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0137061</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.477299</td>
+<td align="right">6.727785</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0033085</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.477299</td>
+<td align="right">6.727785</td>
+<td align="left">Isthmus_of_Tehuantepec</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0416616</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.248719</td>
+<td align="right">7.625364</td>
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0156852</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.248719</td>
+<td align="right">7.625364</td>
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0118269</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.248719</td>
+<td align="right">7.625364</td>
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0130460</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.248719</td>
+<td align="right">7.625364</td>
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0191110</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.248719</td>
+<td align="right">7.625364</td>
+<td align="left">Gulf_of_Guinea</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0650183</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.405485</td>
+<td align="right">5.158175</td>
+<td align="left">Krishna</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0142488</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.405485</td>
+<td align="right">5.158175</td>
+<td align="left">Krishna</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0144655</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.405485</td>
+<td align="right">5.158175</td>
+<td align="left">Krishna</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0224958</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.773848</td>
+<td align="right">6.670057</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0225881</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.773848</td>
+<td align="right">6.670057</td>
+<td align="left">Uruguay_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0152833</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.471635</td>
+<td align="right">6.058262</td>
+<td align="left">Hainan</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0088405</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.471635</td>
+<td align="right">6.058262</td>
+<td align="left">Hainan</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0067060</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.471635</td>
+<td align="right">6.058262</td>
+<td align="left">Hainan</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0095312</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">35.050426</td>
+<td align="right">11.526002</td>
+<td align="left">Saskatchewan_Nelson</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0034460</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">35.050426</td>
+<td align="right">11.526002</td>
+<td align="left">Saskatchewan_Nelson</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0148291</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0179433</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0397829</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0036348</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0151595</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0031990</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0167926</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.751743</td>
+<td align="right">9.087209</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0031302</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.751743</td>
+<td align="right">9.087209</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0135520</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.751743</td>
+<td align="right">9.087209</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0038804</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.592481</td>
+<td align="right">3.544696</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1319073</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.592481</td>
+<td align="right">3.544696</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0354174</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.592481</td>
+<td align="right">3.544696</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0034543</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.592481</td>
+<td align="right">3.544696</td>
+<td align="left">East_Brazil_South_Atlantic_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0024871</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0138934</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0269172</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0069398</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0292602</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.814461</td>
+<td align="right">6.510465</td>
+<td align="left">La_Plata</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0047340</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.814461</td>
+<td align="right">6.510465</td>
+<td align="left">La_Plata</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0164178</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.391289</td>
+<td align="right">6.952096</td>
+<td align="left">Madagascar</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1411674</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.391289</td>
+<td align="right">6.952096</td>
+<td align="left">Madagascar</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0197522</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.391289</td>
+<td align="right">6.952096</td>
+<td align="left">Madagascar</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0133414</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0221511</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0294015</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0120299</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0111811</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.632464</td>
+<td align="right">4.672510</td>
+<td align="left">Shebelli_Juba</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0071728</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.968469</td>
+<td align="right">3.851868</td>
+<td align="left">Murray_Darling</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0146539</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.968469</td>
+<td align="right">3.851868</td>
+<td align="left">Murray_Darling</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0190174</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1152768</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0144819</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0629968</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0336873</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0247158</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0105404</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1073331</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1004184</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0120435</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0057808</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0031662</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0081722</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.000000</td>
+<td align="right">6.666468</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0094955</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.000000</td>
+<td align="right">6.666468</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0235127</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.000000</td>
+<td align="right">6.666468</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0175332</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.000000</td>
+<td align="right">6.666468</td>
+<td align="left">Andaman_Nicobar_Islands</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0164341</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0355786</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0391090</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0109367</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0641800</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0172132</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.954630</td>
+<td align="right">2.992258</td>
+<td align="left">Senegal</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0700405</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0116965</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0176060</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0108218</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.060125</td>
+<td align="right">6.663423</td>
+<td align="left">Rift_Valley</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0163078</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.491133</td>
+<td align="right">6.240285</td>
+<td align="left">Chao_Phraya</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0133629</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.491133</td>
+<td align="right">6.240285</td>
+<td align="left">Chao_Phraya</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0167733</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.000000</td>
+<td align="right">4.773022</td>
+<td align="left">Pampas_Region</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0056108</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.000000</td>
+<td align="right">4.773022</td>
+<td align="left">Pampas_Region</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0126849</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.000000</td>
+<td align="right">4.773022</td>
+<td align="left">Pampas_Region</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0040998</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.000000</td>
+<td align="right">4.773022</td>
+<td align="left">Pampas_Region</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0086515</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">18.550825</td>
+<td align="right">12.803535</td>
+<td align="left">Dnieper</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0031091</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">18.550825</td>
+<td align="right">12.803535</td>
+<td align="left">Dnieper</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0018540</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.036093</td>
+<td align="right">5.665666</td>
+<td align="left">Mahanadi</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0114145</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.036093</td>
+<td align="right">5.665666</td>
+<td align="left">Mahanadi</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0139807</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">6.863125</td>
+<td align="right">4.027066</td>
+<td align="left">Sao_Francisco</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0228441</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">6.863125</td>
+<td align="right">4.027066</td>
+<td align="left">Sao_Francisco</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0213250</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.701915</td>
+<td align="right">7.546310</td>
+<td align="left">Bay_of_Bengal_North_East_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0160683</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.701915</td>
+<td align="right">7.546310</td>
+<td align="left">Bay_of_Bengal_North_East_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0139746</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.336311</td>
+<td align="right">5.665744</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0069581</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.336311</td>
+<td align="right">5.665744</td>
+<td align="left">Missouri_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0120245</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0401035</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0151337</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0332887</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0037177</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0068150</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0056700</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0058643</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0903052</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0686576</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0176936</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.127081</td>
+<td align="right">5.567014</td>
+<td align="left">Brahmani</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0252531</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.812980</td>
+<td align="right">6.595135</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0224987</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.812980</td>
+<td align="right">6.595135</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0115957</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">15.273880</td>
+<td align="right">10.773094</td>
+<td align="left">Peninsula_Malaysia</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0134947</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">15.273880</td>
+<td align="right">10.773094</td>
+<td align="left">Peninsula_Malaysia</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0139637</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.814461</td>
+<td align="right">6.510465</td>
+<td align="left">La_Plata</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0370942</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.814461</td>
+<td align="right">6.510465</td>
+<td align="left">La_Plata</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0093059</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.2247423</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0132340</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0309715</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0569081</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0593772</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0224123</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.961595</td>
+<td align="right">8.016687</td>
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0189347</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.961595</td>
+<td align="right">8.016687</td>
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0160070</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.961595</td>
+<td align="right">8.016687</td>
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0374849</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.961595</td>
+<td align="right">8.016687</td>
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0179927</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.961595</td>
+<td align="right">8.016687</td>
+<td align="left">Grijalva_Usumacinta</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0113289</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0029059</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0039398</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0000000</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0096987</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.2584829</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.995270</td>
+<td align="right">6.461415</td>
+<td align="left">Amazon</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0000000</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.430996</td>
+<td align="right">8.669002</td>
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0205437</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.430996</td>
+<td align="right">8.669002</td>
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0144176</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.430996</td>
+<td align="right">8.669002</td>
+<td align="left">Yucatan_Peninsula</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0138816</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">6.863125</td>
+<td align="right">4.027066</td>
+<td align="left">Sao_Francisco</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0107791</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">6.863125</td>
+<td align="right">4.027066</td>
+<td align="left">Sao_Francisco</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0088291</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1474049</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.728216</td>
+<td align="right">3.688889</td>
+<td align="left">Africa_East_Central_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0297097</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.812980</td>
+<td align="right">6.595135</td>
+<td align="left">Ganges_Bramaputra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0152993</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.747710</td>
+<td align="right">8.864605</td>
+<td align="left">Caribbean</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0190774</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">12.747710</td>
+<td align="right">8.864605</td>
+<td align="left">Caribbean</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0145314</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">12.747710</td>
+<td align="right">8.864605</td>
+<td align="left">Caribbean</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0145042</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">6.863125</td>
+<td align="right">4.027066</td>
+<td align="left">Sao_Francisco</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0135294</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.391289</td>
+<td align="right">6.952096</td>
+<td align="left">Madagascar</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0123044</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0714700</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0288656</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0537216</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0419835</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0334728</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">7.836326</td>
+<td align="right">3.808099</td>
+<td align="left">Niger</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0215309</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">17.881062</td>
+<td align="right">12.177947</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">-0.0005181</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.881062</td>
+<td align="right">12.177947</td>
+<td align="left">Great_Lakes_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0051215</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">16.127954</td>
+<td align="right">11.442025</td>
+<td align="left">Pacific_Northwest_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0087566</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">16.127954</td>
+<td align="right">11.442025</td>
+<td align="left">Pacific_Northwest_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0045768</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0121184</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0140222</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0018147</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0013610</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0029813</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">31.999391</td>
+<td align="right">22.537064</td>
+<td align="left">Sumatra</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0026570</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0714683</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0262223</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0166879</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">11.410884</td>
+<td align="right">5.490733</td>
+<td align="left">Nile</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0055929</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.859901</td>
+<td align="right">6.974829</td>
+<td align="left">South_Atlantic_Gulf_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0103640</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">17.000000</td>
+<td align="right">11.836232</td>
+<td align="left">Philippines</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0205487</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0458319</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">13.951840</td>
+<td align="right">9.550799</td>
+<td align="left">Southern_Central_America</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0062725</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0495096</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0122303</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0303674</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0187385</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0142766</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0114371</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0081953</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0203958</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0122126</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.806154</td>
+<td align="right">5.320107</td>
+<td align="left">South_Africa_South_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0094760</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.875602</td>
+<td align="right">7.191403</td>
+<td align="left">Hong_(Red_River)</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0447327</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.875602</td>
+<td align="right">7.191403</td>
+<td align="left">Hong_(Red_River)</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0063436</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.875602</td>
+<td align="right">7.191403</td>
+<td align="left">Hong_(Red_River)</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0381211</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0296798</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0076936</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0155281</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0308003</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0124863</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.000043</td>
+<td align="right">6.806711</td>
+<td align="left">Ohio_River_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0266217</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0023798</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0085879</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0033430</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0033439</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0031020</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0028506</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0029126</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0036348</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0034503</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0032773</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">10.873114</td>
+<td align="right">7.077324</td>
+<td align="left">Upper_Mississippi_Basin</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0032438</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">8.963530</td>
+<td align="right">6.372486</td>
+<td align="left">China_Coast</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0101902</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">8.963530</td>
+<td align="right">6.372486</td>
+<td align="left">China_Coast</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0068235</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">9.029438</td>
+<td align="right">6.738853</td>
+<td align="left">Huang_He</td>
+<td align="left">Exp_k</td>
+<td align="right">0.1632925</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">9.029438</td>
+<td align="right">6.738853</td>
+<td align="left">Huang_He</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0058520</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="even">
+<td align="right">5.944842</td>
+<td align="right">4.601408</td>
+<td align="left">Guadiana</td>
+<td align="left">Exp_k</td>
+<td align="right">0.0064219</td>
+<td align="left">ForestCropland</td>
+</tr>
+<tr class="odd">
+<td align="right">5.944842</td>
+<td align="right">4.601408</td>
+<td align="left">Guadiana</td>
+<td align="left">GCAM_k</td>
+<td align="right">0.0051232</td>
+<td align="left">ForestCropland</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="anovas" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> anovas</h1>
+<pre class="r"><code>summary(aov(k ~ Type * Basin_long_name * change,
+               data = change_long_data))</code></pre>
+<pre><code>##                              Df  Sum Sq  Mean Sq F value   Pr(&gt;F)    
+## Type                          1 0.00151 0.001508   2.775  0.09676 .  
+## Basin_long_name              48 0.08615 0.001795   3.302 1.50e-10 ***
+## change                        5 0.02827 0.005654  10.403 2.97e-09 ***
+## Type:Basin_long_name         48 0.03318 0.000691   1.272  0.11868    
+## Type:change                   5 0.01506 0.003012   5.541 6.57e-05 ***
+## Basin_long_name:change        5 0.01559 0.003117   5.735 4.40e-05 ***
+## Type:Basin_long_name:change   5 0.01049 0.002098   3.860  0.00208 ** 
+## Residuals                   316 0.17175 0.000544                     
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>Means don’t differ if just slice by GCAM vs experiment. They do differ if you
+look across basins (and lumping GCAM vs experiment into the same population in
+each basin) or look across transition types, which I think would make sense?</p>
+<p>They don’t differ if you break down by Type and Basin
+(consistent with t-test in each basin having same means for 21 of 29 basins
+checked), but it looks like there may be some more significant differences in
+the k-values by transition type any way that is used for grouping distributions.</p>
+<div id="welchs-anova" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Welch’s anova</h2>
+<p>Unfortunately only for one-way anova. SO we can compare the one-way test result
+for each predictor via Welch and the equal variances versions.</p>
+<pre class="r"><code>oneway.test(k ~ Type ,
+            data = change_long_data, var.equal = FALSE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means (not assuming equal variances)
+## 
+## data:  k and Type
+## F = 1.8072, num df = 1.00, denom df = 254.22, p-value = 0.18</code></pre>
+<pre class="r"><code>oneway.test(k ~ Type ,
+            data = change_long_data, var.equal = TRUE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means
+## 
+## data:  k and Type
+## F = 1.8072, num df = 1, denom df = 432, p-value = 0.1796</code></pre>
+<pre class="r"><code>oneway.test(k ~ Basin_long_name ,
+            data = change_long_data, var.equal = FALSE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means (not assuming equal variances)
+## 
+## data:  k and Basin_long_name
+## F = 18.258, num df = 48.000, denom df = 45.405, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>oneway.test(k ~ Basin_long_name ,
+            data = change_long_data, var.equal = TRUE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means
+## 
+## data:  k and Basin_long_name
+## F = 2.5051, num df = 48, denom df = 385, p-value = 7.364e-07</code></pre>
+<pre class="r"><code>oneway.test(k ~ change,
+            data = change_long_data, var.equal = FALSE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means (not assuming equal variances)
+## 
+## data:  k and change
+## F = 40.975, num df = 7.000, denom df = 11.699, p-value = 2.571e-07</code></pre>
+<pre class="r"><code>oneway.test(k ~ change ,
+            data = change_long_data, var.equal = TRUE)</code></pre>
+<pre><code>## 
+##  One-way analysis of means
+## 
+## data:  k and change
+## F = 14.323, num df = 7, denom df = 426, p-value &lt; 2.2e-16</code></pre>
+<p>We do get pretty different results when we do the one-way anova across basins and
+transition types with and without the assumption of equal variances. The conclusions
+are all the same (there are significant differences, which we expect and also don’t
+care about because it’s not comparing GCAM to observation) but I think that means
+we don’t want to rely on our three-way anova in the previous section.</p>
+<p>The basin-by-basin t-tests however are fine, and do suggest that the GCAM approach
+is broadly consistent with experiments in 21 of 29 basins where data exists in decent quantities.</p>
+</div>
+<div id="maxvar-4-minvar-test" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> maxvar &lt;= 4 * minvar test</h2>
+<pre class="r"><code>change_long_data %&gt;%
+  group_by(Type) %&gt;%
+  summarize(type_var = sd(k) ^2) %&gt;%
+  ungroup -&gt;
+  type_var
+
+change_long_data %&gt;%
+  group_by(Basin_long_name) %&gt;%
+  summarize(basin_var = sd(k) ^2) %&gt;%
+  ungroup -&gt;
+  basin_var
+
+change_long_data %&gt;%
+  group_by(Type, Basin_long_name) %&gt;%
+  summarize(type_basin_var = sd(k) ^2) %&gt;%
+  ungroup -&gt;
+  type_basin_var</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;Type&#39;. You can override using the
+## `.groups` argument.</code></pre>
+<pre class="r"><code>print(max(type_var$type_var) / min(type_var$type_var))</code></pre>
+<pre><code>## [1] 11.21279</code></pre>
+<pre class="r"><code>print(max(basin_var$basin_var) / min(basin_var$basin_var))</code></pre>
+<pre><code>## [1] 112672.9</code></pre>
+<pre class="r"><code>print(paste(max(type_basin_var$type_basin_var, na.rm = T), min(type_basin_var$type_basin_var, na.rm = T)))</code></pre>
+<pre><code>## [1] &quot;0.00682519973657701 0&quot;</code></pre>
 <p>Then, the ANOVAs could be performed. The Akaike information criterion was used to assess which ANOVA best captured the data.</p>
-<pre class="r"><code>#Type + Basin (no average)
+<pre class="r"><code>#Type + Basin 
 aov_Full &lt;- aov(k ~ Type + Basin_long_name ,
                       data = full_long_data)
 summary(aov_Full)
@@ -436,19 +4332,12 @@ TukeyHSD(aov_Full)
 AIC(aov_Full)
 
 
-#Type + Change (no average)
+#Type + Change 
 aov_Full_change &lt;- aov(k ~ Type + change,
                       data = change_long_data)
 summary(aov_Full_change)
 TukeyHSD(aov_Full_change)
 AIC(aov_Full_change)
-
-#Type * Change (no average)
-aov_Full_change_times &lt;- aov(k ~ Type * change,
-                       data = change_long_data)
-summary(aov_Full_change_times)
-TukeyHSD(aov_Full_change_times)
-AIC(aov_Full_change_times)
 
 #Type + Basin + change
 aov_big &lt;- aov(k ~ Type + Basin_long_name + change,
@@ -457,41 +4346,34 @@ summary(aov_big)
 TukeyHSD(aov_big)
 AIC(aov_big)
 
+#Type * Change 
+aov_Full_type_by_change &lt;- aov(k ~ Type * change,
+                       data = change_long_data)
+summary(aov_Full_type_by_change)
+TukeyHSD(aov_Full_type_by_change)
+AIC(aov_Full_type_by_change)
 
+#Type * Basin 
+aov_Full_type_by_basin &lt;- aov(k ~ Type * Basin_long_name,
+                               data = change_long_data)
+summary(aov_Full_type_by_basin)
+TukeyHSD(aov_Full_type_by_basin)
+AIC(aov_Full_type_by_basin)
 
-#Now, we&#39;ll do some averages
-#Type + change (averaged by change)
-change_long_data %&gt;%
-  group_by(Type, change) %&gt;%
-  summarize(mean_k = mean(k), std_dev_k = sd(k)) -&gt; change_grouped_long</code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;Type&#39;. You can override using the
-## `.groups` argument.</code></pre>
-<pre class="r"><code>aov_change &lt;- aov(mean_k ~ Type + change,
-               data = change_grouped_long)
-summary(aov_change)
-TukeyHSD(aov_change)
-AIC(aov_change)
-
-
-#Type + Basin (averaged by basin)
-#Average by region
-change_long_data %&gt;%
-  group_by(Type, Basin_long_name) %&gt;%
-  summarize(mean_k = mean(k), std_dev_k = sd(k)) -&gt; basin_grouped_long</code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;Type&#39;. You can override using the
-## `.groups` argument.</code></pre>
-<pre class="r"><code>aov_basin &lt;- aov(mean_k ~ Type + Basin_long_name,
-                  data = basin_grouped_long)
-summary(aov_basin)
-AIC(aov_basin)</code></pre>
+#Type * Basin * Change 
+aov_Full_type_by_basin_by_change &lt;- aov(k ~ Type * Basin_long_name * change,
+                              data = change_long_data)
+summary(aov_Full_type_by_basin_by_change)
+AIC(aov_Full_type_by_basin_by_change)</code></pre>
 </div>
-<div id="results" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Results</h1>
+</div>
+<div id="results" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Results</h1>
 Overall, GCAMs rate and k value outputs matched experimental values.
 <div class="figure"><span style="display:block;" id="fig:k-Histogram-full"></span>
 <img src="data:image/png;base64,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YIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1ImAGhFQETKDHYqAOhFQIwIqQmawQxFQJwJqREBFyAx2KALqRECNCKgImcEORUCdCKgRARUhM9ihCKgTATUioCJkBjsUAXUioEYEVITMYIcioE4E1IiAipAZ7FAE1OkYA/oNxLcdq94CLImANjgCNeIIVITMYIfiCNSJgBoRUBEygx2KgDoRUCMCKkJmsEMRUCcCakRARcgMdigC6kRAjQioCJnBDkVAnQioEQEVITPYoQioEwE1IqAiZAY7FAF1IqBGBFSEzGCHIqBOBNSIgIqQGexQBNSJgBoRUBEygx2KgDoRUCMCKkJmsEMRUCcCakRARcgMdigC6kRAjQioCJnBDkVAnQioEQEVITPYoQioEwE1IqAiZAY7FAF1IqBGBFSEzGCHIqBOBNSIgIqQGexQBNSJgBoRUBEygx2KgDoRUCMCKkJmsEMRUCcCakRARcgMdigC6kRAjQioCJnBDkVAnQioEQEVITPYoQioEwE1IqAiZAY7FAF1IqBGBFSEzGCHIqBOBNSIgIqQGexQBNSJgBoRUBEygx2KgDoRUCMCKkJm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" alt="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post &amp; Kwon and Wei et al." width="672" />
 <p class="caption">
-Figure 2.1: Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post &amp; Kwon and Wei et al.
+Figure 3.1: Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post &amp; Kwon and Wei et al.
 </p>
 </div>
 <p>Several t-tests were also performed. One was performed on each of the different k value sources (Post &amp; Kwon, Wei et al., and the aggregated data), and another was performed on the Post &amp; Kwon rate data. The difference was significantly significant for the Post &amp; Kwon and Wei et al. data individually, but not for aggregated k values.</p>
@@ -531,22 +4413,36 @@ Figure 2.1: Histograms showing overlapping GCAM and experimental data for comput
 ## sample estimates:
 ##  mean of x  mean of y 
 ## 0.01604441 0.01231630</code></pre>
-<p>Based on the AIC for each ANOVA, the tests accounting for data source + transition type and data source + basin + transition type were used. These tests whoed no significant difference in means based on data source.</p>
-<pre class="r"><code>summary(aov_Full_change)</code></pre>
-<pre><code>##              Df  Sum Sq  Mean Sq F value Pr(&gt;F)    
-## Type          1 0.00151 0.001508   2.199  0.139    
-## change        7 0.06897 0.009852  14.363 &lt;2e-16 ***
-## Residuals   425 0.29152 0.000686                   
+<p>Based on the AIC for each ANOVA, the tests accounting for data source by transition type by region was used. These tests showed no significant difference in means based on data source.</p>
+<pre class="r"><code>summary(aov_Full_type_by_basin_by_change)</code></pre>
+<pre><code>##                              Df  Sum Sq  Mean Sq F value   Pr(&gt;F)    
+## Type                          1 0.00151 0.001508   2.775  0.09676 .  
+## Basin_long_name              48 0.08615 0.001795   3.302 1.50e-10 ***
+## change                        5 0.02827 0.005654  10.403 2.97e-09 ***
+## Type:Basin_long_name         48 0.03318 0.000691   1.272  0.11868    
+## Type:change                   5 0.01506 0.003012   5.541 6.57e-05 ***
+## Basin_long_name:change        5 0.01559 0.003117   5.735 4.40e-05 ***
+## Type:Basin_long_name:change   5 0.01049 0.002098   3.860  0.00208 ** 
+## Residuals                   316 0.17175 0.000544                     
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<pre class="r"><code>summary(aov_big)</code></pre>
-<pre><code>##                  Df  Sum Sq  Mean Sq F value   Pr(&gt;F)    
-## Type              1 0.00151 0.001508   2.323    0.128    
-## Basin_long_name  48 0.08615 0.001795   2.765 3.73e-08 ***
-## change            5 0.02827 0.005654   8.709 7.85e-08 ***
-## Residuals       379 0.24606 0.000649                     
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>The TukeyHSD results had to be converted to a dataframe and filtered to be more easily analyzed.</p>
+<pre class="r"><code>type_basin_ty &lt;- TukeyHSD(aov_Full_type_by_basin_by_change, which = &#39;Type:Basin_long_name&#39;)
+type_change_ty &lt;- TukeyHSD(aov_Full_type_by_basin_by_change, which = &#39;Type:change&#39;)
+basin_change_ty &lt;- TukeyHSD(aov_Full_type_by_basin_by_change, which = &#39;Basin_long_name:change&#39;)
+
+#Convert the Tukey outputs 
+as.data.frame(type_basin_ty[1]) %&gt;% 
+  arrange(Type.Basin_long_name.p.adj) %&gt;%
+  filter(Type.Basin_long_name.p.adj &lt; .01) -&gt; sorted_ty_type_basin
+
+as.data.frame(type_change_ty[1]) %&gt;% 
+  arrange(Type.change.p.adj) %&gt;%
+  filter(Type.change.p.adj &lt; .01) -&gt; sorted_ty_type_change
+
+as.data.frame(basin_change_ty[1]) %&gt;% 
+  arrange(Basin_long_name.change.p.adj) %&gt;%
+  filter(Basin_long_name.change.p.adj &lt; .01) -&gt; sorted_ty_basin_change</code></pre>
 <p>The average of the difference in means between k values was also plotted, grouped by transition type:</p>
 <pre class="r"><code>#Make the mean graph
 Full_Comparison %&gt;%
