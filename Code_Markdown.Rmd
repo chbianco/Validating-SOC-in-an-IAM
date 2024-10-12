@@ -1,5 +1,5 @@
 ---
-title: "Comparing GCAM soil organic carbon predictions to empirical land use results"
+title: "Validation of soil carbon dynamics post land-use transition in a multisector dynamics model"
 output: bookdown::html_document2
 date: "`r format(Sys.time(), '%B %d %Y')`"
 ---
@@ -52,7 +52,7 @@ The experimental data compared to GCAM's outputs was taken from Post & Kwon (200
 Once fully digitized, the experimental data was loaded into R as well. Note that there were several entries with missing timeframes or where the location of the sample could not be determined. These were assigned a value of 'NA'. 
 
 ```{r Read-In-Experimental-Data}
-PostKwon <- read.csv(file= 'Data/Experimental Data.csv', na.strings = c("", "NA"))
+PostKwon <- read.csv(file= 'Data/Post and Kwon Data.csv', na.strings = c("", "NA"))
 Wei <- read.csv(file= 'Data/Wei et al Data.csv', na.strings = c("", "NA"))
 
 ```
@@ -67,7 +67,7 @@ k = -\frac{ln \left(\frac{C_f}{C_0}\right)}{t}
 
 \begin{equation}
 \tag{2}
-k = -\frac{ln (Rate \times t + 1)}{t}
+k = -\frac{ln (\frac{Rate \times t}{C_0} + 1)}{t}
 \end{equation}
 
 \newline
@@ -75,7 +75,7 @@ Experimental data from Wei et al. did not contain any raw rate information. Inst
 
 \begin{equation}
 \tag{3}
-k = -\frac{ln \left(\frac{1}{\frac{|OC Decrease|}{100} + 1}\right)}{t}
+k = -\frac{ln \left(1 - \frac{percent decrease}{100}\right)}{t}
 \end{equation}
 
 The code for merging the GCAM and experimental, as well as for computing the rate and k value is below. The process was the same for the Wei et al. data. 
