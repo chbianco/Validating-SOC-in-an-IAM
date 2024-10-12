@@ -1,5 +1,5 @@
 ---
-title: "Comparing GCAM soil organic carbon predictions to empirical land use results"
+title: "Validation of soil carbon dynamics post land-use transition in a multisector dynamics model"
 output: bookdown::html_document2
 date: "`r format(Sys.time(), '%B %d %Y')`"
 ---
@@ -52,7 +52,7 @@ The experimental data compared to GCAM's outputs was taken from Post & Kwon (200
 Once fully digitized, the experimental data was loaded into R as well. Note that there were several entries with missing timeframes or where the location of the sample could not be determined. These were assigned a value of 'NA'. 
 
 ```{r Read-In-Experimental-Data}
-PostKwon <- read.csv(file= 'Data/Experimental Data.csv', na.strings = c("", "NA"))
+PostKwon <- read.csv(file= 'Data/Post and Kwon Data.csv', na.strings = c("", "NA"))
 Wei <- read.csv(file= 'Data/Wei et al Data.csv', na.strings = c("", "NA"))
 
 ```
@@ -67,7 +67,7 @@ k = -\frac{ln \left(\frac{C_f}{C_0}\right)}{t}
 
 \begin{equation}
 \tag{2}
-k = -\frac{ln (Rate \times t + 1)}{t}
+k = -\frac{ln (\frac{Rate \times t}{C_0} + 1)}{t}
 \end{equation}
 
 \newline
@@ -75,33 +75,86 @@ Experimental data from Wei et al. did not contain any raw rate information. Inst
 
 \begin{equation}
 \tag{3}
-k = -\frac{ln \left(\frac{1}{\frac{|OC Decrease|}{100} + 1}\right)}{t}
+k = -\frac{ln \left(1 - \frac{percent decrease}{100}\right)}{t}
 \end{equation}
 
 The code for merging the GCAM and experimental, as well as for computing the rate and k value is below. The process was the same for the Wei et al. data. 
 
-```{r create_comparison_Post_Kwon}
+```{r calculate betas for P&K, echo = FALSE}
+#61 rows of data in P&K
+
+#data with percentage change
 PostKwon %>%
-  select(Initial_Land_Use, Final_Land_Use, GLU_code, GCAM_region_ID, Time, Exp_Rate) %>%
-  na.omit() %>%
+  filter(!is.na(Initial_Percent_C)) -> PostKwon_a #7
+print(unique(PostKwon_a$Publication))
+
+#data with only one end member
+PostKwon %>%
+  filter(! Publication %in% c("Veldkamp (1994)",
+                              "Ulery (1995)",
+                              "Beke (1990)"),
+         is.na(Final_C) | is.na(Initial_C)) -> PostKwon_b #6
+
+#data where beta can be directly calculated
+PostKwon %>%
+  filter(!is.na(Final_C),
+         !is.na(Initial_C)) -> PostKwon_c #48
+
+#sum of data frames should equal to 61
+sum(nrow(PostKwon_a),
+    nrow(PostKwon_b),
+    nrow(PostKwon_c))
+
+#from change in %OC
+PostKwon_a %>%
+  mutate(beta = 1 - ((Initial_Percent_C - Final_Percent_C)/100)) -> PostKwon_a
+
+#from either C0 or CF
+unique(PostKwon_b$Publication)
+PostKwon_b_C1 <- PostKwon_b[PostKwon_b$Publication == "White et al. (1976)",]
+PostKwon_b_C2 <- PostKwon_b[PostKwon_b$Publication == "Pregitzer & Palik (1996)",]
+
+PostKwon_b_C1 %>%
+  mutate(beta = 1 + (Exp_Rate * Time)/Initial_C) -> PostKwon_b_C1
+PostKwon_b_C2 %>%
+  mutate(beta = Final_C / (Final_C - Exp_Rate * Time)) -> PostKwon_b_C2
+
+#from C0 and Cf
+PostKwon_c %>%
+  mutate(beta = Final_C/Initial_C) -> PostKwon_c
+
+bind_rows(PostKwon_a, PostKwon_b_C1,
+          PostKwon_b_C2, PostKwon_c) -> PostKwon_wBeta
+
+```
+
+```{r create_comparison_Post_Kwon, echo = FALSE}
+
+#losing 11 rows of P&K data in here seemingly because the
+#Land_Type doesn't have associated C data in
+#simple_soil_c
+
+PostKwon_wBeta %>%
+  select(Initial_Land_Use, Final_Land_Use, GLU_code, GCAM_region_ID, Time, Exp_Rate, beta) %>%
+  #na.omit() %>%
   mutate(Land_Type = Initial_Land_Use) %>%
-  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  left_join(simple_soilC_regions,
+            by = c('GLU_code','GCAM_region_ID', 'Land_Type')) %>%
   rename(initial_soil_c = soil_c) %>%
   select(-Land_Type) %>%
   mutate(Land_Type = Final_Land_Use) %>%
-  right_join(simple_soilC_regions, by = c('GLU_code', 'Land_Type', 'GCAM_region_ID')) %>%
+  left_join(simple_soilC_regions,
+             by = c('GLU_code','GCAM_region_ID','Land_Type')) %>%
   rename(final_soil_c = soil_c) %>%
   select(-Land_Type, -soilTimeScale.x, -Basin_long_name.x) %>%
   rename(soilTimeScale = soilTimeScale.y, Basin_long_name = Basin_long_name.y) %>%
   na.omit() %>%
-  mutate(GCAM_Rate = (final_soil_c - initial_soil_c)/soilTimeScale, Rate_Difference = Exp_Rate - GCAM_Rate, 
-         Exp_k = -log(abs(Exp_Rate)*Time +1)/Time,
+  mutate(GCAM_Rate = (final_soil_c - initial_soil_c)/soilTimeScale,
+         Rate_Difference = GCAM_Rate - Exp_Rate, 
+         Exp_k = -log(beta)/Time,
          GCAM_k = -log(final_soil_c/initial_soil_c)/soilTimeScale, 
          source = 'Post & Kwon'
-  ) %>%
-  #This next line corrects the sign of Exp_k--we had to take the absolute value to avoid NaNs, so this accounts for that 
-  #This did not have to be done for the GCAM_k because the argument inside the natural log will always be positive--it is a positive value divided by another positive value--so sign correction was not necesary. 
-  mutate(Exp_k = ifelse(sign(Exp_k) == sign(Exp_Rate), Exp_k*(-1), Exp_k)) -> PostKwon_Comparison
+  ) -> PostKwon_Comparison
 ```
 
 Note that, because of how the k value is computed for the experimental data, the sign was often mismatched. The sign of k corresponds to the opposite of the sign of the rate, which had to be corrected manually.  
@@ -125,7 +178,7 @@ Wei %>%
   na.omit() %>%
   mutate(GCAM_Rate = (final_soil_c - initial_soil_c)/soilTimeScale,
          GCAM_k = -log(final_soil_c/initial_soil_c)/soilTimeScale,
-         Exp_k = -log(1/((abs(OC_decrease)/100) +1))/Time,
+         Exp_k = -log(1 - (OC_decrease/100))/Time,
          source = 'Wei et al'
   ) %>%
   #This next line corrects the sign of Exp_k--we had to take the absolute value to avoid NaNs, so this accounts for that 
@@ -141,292 +194,34 @@ Full_Comparison <- bind_rows(
   select(PostKwon_Comparison, -Exp_Rate, -Rate_Difference),
   select(Wei_Comparison, -OC_decrease)
   )
-```
 
-Once  the k values were calculated, t-tests and ANOVAs were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
-
-```{r Merge_Data_and_add_transition}
+#Now, we want to create another data frame that has all the repeated regions between the two studies
 Full_Comparison %>%
-  pivot_longer(cols = Exp_k:GCAM_k,
-               names_to = "Type",
-               values_to = "k") -> full_long_data 
+  mutate(source_short = ifelse(source == 'Post & Kwon', 'PostKwon', 'Wei'),
+         basin_source = paste(Basin_long_name, source_short)) %>%
+  filter((paste(Basin_long_name, 'PostKwon') %in% basin_source) &
+           (paste(Basin_long_name, 'Wei') %in% basin_source)) -> Duplicate_Comparison
 
-full_long_data %>% 
-  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = '')) -> change_long_data
-```
-
-We also checked if the variances were equal.
-
-```{r}
-vars = var.test(k ~ Type, data = change_long_data)
-```
-They were not, so we performed some individual Welch's t-tests to check if the aov function was sufficiently robust to handle deviations in variance. If these results matched those from the ANOVAs, we could say that the ANOVA results were not significantly affected by unequal variances.
-
-## Basic characteristics of data, decent number points.
-
-Look at the basic characteristics of the data, and specifically filter
-down to basins with at least 3 data points (3 transitions of any kind).
-You can make this a little stricter by uncommenting out all the lines with 
-`change` - that would say we only consider basins with at least 3 of the same
-kind of transition.
-
-```{r}
-knitr::kable(head(change_long_data))
-
-change_long_data %>%
-  group_by(Basin_long_name, change, Type) %>%
-  summarise(n_points  = n()) %>%
-  ungroup %>%
-  knitr::kable(.)
-
-
-change_long_data %>%
-  group_by(Basin_long_name, 
-           #change,
-           Type) %>%
-  summarise(n_points  = n()) %>%
-  ungroup %>%
-  filter(n_points >1)  %>%
-   mutate(joint_id = paste(Basin_long_name,
-                           #change, 
-                           sep = '~')) ->
-  decent_num_points
-knitr::kable(decent_num_points)
-
-change_long_data %>%
-  mutate(joint_id = paste(Basin_long_name, 
-                          #change,
-                          sep = '~')) %>%
-  filter(joint_id %in% unique(decent_num_points$joint_id)) ->
-  data_for_analysis
-
-knitr::kable(head(data_for_analysis))
-
-print( paste('Basins with at least 3 samples of any transition to validate against:', length(unique(data_for_analysis$Basin_long_name))))
-```
-
-## t-tests by basin
-
-By default, R runs welch's t-test, which assumes the variances differ between
-groups. 
-
-```{r}
-
-basin_pval_holder <- data.frame()
-
-
-for (basin in unique(data_for_analysis$Basin_long_name)){
-  # print(basin)
-  
-  data_for_analysis %>% 
-    filter(Basin_long_name == basin,
-           Type == 'GCAM_k') ->
-    gcam_basin
-  
-  data_for_analysis %>% 
-    filter(Basin_long_name == basin,
-           Type == 'Exp_k') ->
-    exp_basin
-  
-  pval <- t.test(exp_basin$k, gcam_basin$k, alternative = 'two.sided')$p.value
-  
- # print(paste('two-sided alternative, t.test pvalue: ', pval))
+counts = table(Duplicate_Comparison$basin_source)
  
- basin_pval_holder %>%
-   bind_rows(data.frame(basin = basin, p.value = pval), .) ->
-   basin_pval_holder
-}
-
+Duplicate_Comparison %>%
+  filter((counts[paste(Basin_long_name, 'Wei')] > 1) &
+           (counts[paste(Basin_long_name, 'PostKwon')] > 1)) -> Duplicate_Comparison
 ```
 
-## interpretation
+```{r Mean and Standard Deviation}
+mean(Full_Comparison$Exp_k)
+sd(Full_Comparison$Exp_k)
 
-So regardless of transition type, for basins with at least 3 points of any kind 
-of transition recorded, if the p value of the t.test between the experimental
-and GCAM distributions of k is greater than 0.05, we fail to reject the hypothesis
-that the mean of the distribution of k values from GCAM differs from the mean of 
-the distribution of k values from experiment. 
+mean(Full_Comparison$GCAM_k)
+sd(Full_Comparison$GCAM_k)
 
-```{r}
-
-print(paste('In:' ,
-            length(which(basin_pval_holder$p.value > 0.05)),
-            'of', nrow(basin_pval_holder), 
-            'basins, we fail to reject the null hypothesis that the means differ.'))
+nrow(Full_Comparison)
 ```
 
-So it looks like across 21 of 29 basins with decent amount of data to validate, 
-GCAM and experiments, we infer the k-values are comparable, suggesting the 
-GCAM approach validates well in these basins
+Once the k values were calculated, t-tests, a linear-mixed model ANOVA, a non parametric Aligned Rank Transform test, and several more in depth Welch's t-tests were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. 
 
-### differing basins
-
-Let's take a look at the 8 basins that differ. 
-
-
-```{r}
-basin_pval_holder %>%
-  filter(p.value <= 0.05) %>%
-  select(basin) ->
-  differing_basins
-
-change_long_data %>%
-  filter(basin %in% differing_basins$basin) %>%
-  select(initial_soil_c, final_soil_c, Basin_long_name, Type, k, change) %>%
-  distinct %>% 
-  knitr::kable(.)
-```
-
-
-
-# anovas
-
-```{r}
-summary(aov(k ~ Type * Basin_long_name * change,
-               data = change_long_data))
-```
-Means don't differ if just slice by GCAM vs experiment. They do differ if you 
-look across basins (and lumping GCAM vs experiment into the same population in 
-each basin) or look across transition types, which I think would make sense? 
-
-They don't differ if you break down by Type and Basin 
-(consistent with t-test in each basin having same means for 21 of 29 basins
-checked), but it looks like there may be some more significant differences in 
-the k-values by transition type any way that is used for grouping distributions.
-
-
-## Welch's anova
-
-Unfortunately only for one-way anova. SO we can compare the one-way test result
-for each predictor via Welch and the equal variances versions. 
-
-```{r}
-oneway.test(k ~ Type ,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ Type ,
-            data = change_long_data, var.equal = TRUE)
-
-oneway.test(k ~ Basin_long_name ,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ Basin_long_name ,
-            data = change_long_data, var.equal = TRUE)
-
-
-oneway.test(k ~ change,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ change ,
-            data = change_long_data, var.equal = TRUE)
-```
-
-
-We do get pretty different results when we do the one-way anova across basins and
-transition types with and without the assumption of equal variances. The conclusions
-are all the same (there are significant differences, which we expect and also don't
-care about because it's not comparing GCAM to observation) but I think that means
-we don't want to rely on our three-way anova in the previous section. 
-
-The basin-by-basin t-tests however are fine, and do suggest that the GCAM approach
-is broadly consistent with experiments in 21 of 29 basins where data exists in decent quantities.
-
-## maxvar <= 4 * minvar test
-
-
-```{r}
-
-change_long_data %>%
-  group_by(Type) %>%
-  summarize(type_var = sd(k) ^2) %>%
-  ungroup ->
-  type_var
-
-change_long_data %>%
-  group_by(Basin_long_name) %>%
-  summarize(basin_var = sd(k) ^2) %>%
-  ungroup ->
-  basin_var
-
-change_long_data %>%
-  group_by(Type, Basin_long_name) %>%
-  summarize(type_basin_var = sd(k) ^2) %>%
-  ungroup ->
-  type_basin_var
-
-
-print(max(type_var$type_var) / min(type_var$type_var))
-
-
-print(max(basin_var$basin_var) / min(basin_var$basin_var))
-
-
-print(paste(max(type_basin_var$type_basin_var, na.rm = T), min(type_basin_var$type_basin_var, na.rm = T)))
-
-```
-
-Then, the ANOVAs could be performed. The Akaike information criterion was used to assess which ANOVA best captured the data.
-
-```{r All_Anovas, echo = TRUE, results = 'hide', warning=FALSE}
-#Type + Basin 
-aov_Full <- aov(k ~ Type + Basin_long_name ,
-                      data = full_long_data)
-summary(aov_Full)
-TukeyHSD(aov_Full)
-AIC(aov_Full)
-
-
-#Type + Change 
-aov_Full_change <- aov(k ~ Type + change,
-                      data = change_long_data)
-summary(aov_Full_change)
-TukeyHSD(aov_Full_change)
-AIC(aov_Full_change)
-
-#Type + Basin + change
-aov_big <- aov(k ~ Type + Basin_long_name + change,
-               data = change_long_data)
-summary(aov_big)
-TukeyHSD(aov_big)
-AIC(aov_big)
-
-#Type * Change 
-aov_Full_type_by_change <- aov(k ~ Type * change,
-                       data = change_long_data)
-summary(aov_Full_type_by_change)
-TukeyHSD(aov_Full_type_by_change)
-AIC(aov_Full_type_by_change)
-
-#Type * Basin 
-aov_Full_type_by_basin <- aov(k ~ Type * Basin_long_name,
-                               data = change_long_data)
-summary(aov_Full_type_by_basin)
-TukeyHSD(aov_Full_type_by_basin)
-AIC(aov_Full_type_by_basin)
-
-#Type * Basin * Change 
-aov_Full_type_by_basin_by_change <- aov(k ~ Type * Basin_long_name * change,
-                              data = change_long_data)
-summary(aov_Full_type_by_basin_by_change)
-AIC(aov_Full_type_by_basin_by_change)
-```
-
-
-# Results
-Overall, GCAMs rate and k value outputs matched experimental values. 
-```{r k-Histogram-full, echo=FALSE, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
-#Plot overlapping k histograms for the different k sources
-ggplot() +
-  geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
-  geom_histogram(aes(x = Full_Comparison$GCAM_k,  fill = 'GCAM'), alpha = 0.5, bins = 75) +
-  xlab(expression(k~(y^-1))) + ylab('Count') +
-  scale_fill_manual(name = "Data Source", 
-                    values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
-  theme_light() 
-```
-
-
-Several t-tests were also performed. One was performed on each of the different k value sources (Post & Kwon, Wei et al., and the aggregated data), and another was performed on the Post & Kwon rate data. The difference was significantly significant for the Post & Kwon and Wei et al. data individually, but not for aggregated k values.   
+The results of the initial t-tests are below 
 ```{r t-test-Post-Kwon}
 t.test(PostKwon_Comparison$Exp_k, PostKwon_Comparison$GCAM_k, alternative = 'two.sided')
 ```
@@ -440,34 +235,180 @@ t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided')
 t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
 ```
 
-Based on the AIC for each ANOVA, the tests accounting for data source by transition type by region was used. These tests showed no significant difference in means based on data source. 
+Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
 
-```{r}
-summary(aov_Full_type_by_basin_by_change)
+```{r Merge_Data_and_add_transition}
+Full_Comparison %>%
+  pivot_longer(cols = Exp_k:GCAM_k,
+               names_to = "Type",
+               values_to = "k") -> full_long_data 
+
+full_long_data %>% 
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = '')) -> change_long_data
 ```
 
-The TukeyHSD results had to be converted to a dataframe and filtered to be more easily analyzed.
+We also checked if the variances were equal.
 
-```{r}
-type_basin_ty <- TukeyHSD(aov_Full_type_by_basin_by_change, which = 'Type:Basin_long_name')
-type_change_ty <- TukeyHSD(aov_Full_type_by_basin_by_change, which = 'Type:change')
-basin_change_ty <- TukeyHSD(aov_Full_type_by_basin_by_change, which = 'Basin_long_name:change')
+```{r check_variance}
+vars = var.test(k ~ Type, data = change_long_data)
+```
+They were not, hence the need for the linear mixed model, non-parametric, and Welch's t-tests.
 
-#Convert the Tukey outputs 
-as.data.frame(type_basin_ty[1]) %>% 
-  arrange(Type.Basin_long_name.p.adj) %>%
-  filter(Type.Basin_long_name.p.adj < .01) -> sorted_ty_type_basin
+Then, the skewness of the data was tested. 
 
-as.data.frame(type_change_ty[1]) %>% 
-  arrange(Type.change.p.adj) %>%
-  filter(Type.change.p.adj < .01) -> sorted_ty_type_change
+```{r Skewness, echo = FALSE}
+#IF YOU WANT TWO TYPES, USE THIS
+Full_Comparison %>%
+  pivot_longer(cols = Exp_k:GCAM_k,
+               names_to = "Type",
+               values_to = "k") -> full_long_data 
 
-as.data.frame(basin_change_ty[1]) %>% 
-  arrange(Basin_long_name.change.p.adj) %>%
-  filter(Basin_long_name.change.p.adj < .01) -> sorted_ty_basin_change
+#Let's add transition type
+full_long_data %>% 
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = '')) -> change_long_data
+
+
+library(e1071)
+
+current_skewness <- skewness(full_long_data$k)
+print(paste("Current Skewness:", current_skewness))
+hist(full_long_data$k)
+
+#through trial and error, 1/(k + 0.35)
+#seems about as good as we can get
+
+transformed_skewness <- skewness(1/(full_long_data$k + 0.35))
+print(paste("Transformed Skewness:", transformed_skewness))
+hist(1/(full_long_data$k + 0.35))
 
 ```
 
+\newline
+After improving the skew, we can perform analysis of variance on the data, but we run into issues with multicollinearity. Here we look for the effect of land-use transition type within the Post&Kwon comparison data (which has multiple LUC types) and the effect of geography within the Wei et al comparison data (which has many basins, but only one LUC type).
+```{r Anova 1 of 2}
+library(car)
+library(emmeans)
+library(performance)
+
+#Not possible to run model with both LUC and Basin,
+#due to unequal distribution of data across
+#LUC type and Basin
+
+LUC_model <- lm(1/(k + 0.35) ~ Type * change,
+               data = change_long_data[change_long_data$source == "Post & Kwon",])
+Anova(LUC_model, type = "III")
+LUC_emm <- emmeans(LUC_model, ~ Type|change, regrid = "response")
+pairs(LUC_emm)
+
+performance::check_homogeneity(LUC_model, method = "auto")
+
+ggplot(change_long_data[change_long_data$source == "Post & Kwon",], aes(Type, k, fill = Type)) + geom_boxplot() +
+  scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#3584B0',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Post & Kwon vs GCAM by Land-Use Transition") +
+  facet_wrap(change ~.) + theme_light()
+```
+
+\newline
+GCAM k values differ from Post & Kwon values specifically for Forest to Pasture transitions.
+\newline
+
+```{r Anova 2 of 2, fig.width=10,fig.height=11}
+Basin_model <- lm(1/(k + 0.35) ~ Type * Basin_long_name,
+               data = change_long_data[change_long_data$source == "Wei et al",])
+Anova(Basin_model, type = "III")
+Basin_emm <- emmeans(Basin_model, ~ Type|Basin_long_name, regrid = "response")
+pairs(Basin_emm)
+
+performance::check_homogeneity(Basin_model, method = "auto")
+
+ggplot(change_long_data[change_long_data$source == "Wei et al",], aes(Type, k, fill = Type)) + geom_boxplot() +
+    scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#45912c',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Wei et al vs GCAM by Basin\nnote variable Y axis") +
+  facet_wrap(Basin_long_name ~., ncol = 5, scale = "free_y") + theme_light() +
+  theme(legend.position = "bottom")
+```
+
+```{r Plot of basins with significant posthoc comparison}
+change_long_data %>%
+  filter(source == "Wei et al",
+         Basin_long_name %in% c("Philippines",
+                                "Ohio_River_Basin",
+                                "Niger",
+                                "Mekong",
+                                "Madagascar",
+                                "Huang_He",
+                                "Brahmani",
+                                "Gulf_of_Guinea",
+                                "Amazon")) %>%
+  ggplot(aes(Type, k, fill = Type)) + geom_boxplot() +
+    scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#45912c',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Wei et al vs GCAM by Basin \np < 0.05 posthoc comparisons \nnote variable Y axis") +
+  facet_wrap(Basin_long_name ~., scale = "free_y") + theme_light() +
+  theme(legend.position = "bottom")
+```
+
+```{r Results from the non-parametric test}
+
+library(ARTool)
+
+LUC_art_model <- art(1/(k + 0.35) ~ as.factor(Type) * as.factor(change),
+               data = change_long_data[change_long_data$source == "Post & Kwon",])
+LUC_art <- anova(LUC_art_model)
+print(LUC_art)
+
+Basin_art_model <- lm(1/(k + 0.35) ~ as.factor(Type) * as.factor(Basin_long_name),
+               data = change_long_data[change_long_data$source == "Wei et al",])
+Basin_art <- anova(Basin_art_model)
+print(Basin_art)
+
+```
+
+The verifying results from the Welch's t-test are below. First, for the Post & Kwon data looking at Forest to Pasture transitions
+```{r}
+Full_Comparison %>%
+  filter(source == 'Post & Kwon') %>%
+  filter(Initial_Land_Use == 'Forest') %>%
+  filter(Final_Land_Use == 'Pasture') -> PostKwon_t_data
+
+t.test(PostKwon_t_data$Exp_k, PostKwon_t_data$GCAM_k)
+```
+Now, for the nine regions in Wei et al. that showed a significant difference:
+
+```{r}
+t.test(filter(Wei_Comparison, Basin_long_name=='Philippines')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Philippines')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Ohio_River_Basin')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Ohio_River_Basin')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Niger')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Niger')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Mekong')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Mekong')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Madagascar')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Madagascar')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Brahmani')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Brahmani')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Gulf_of_Guinea')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Gulf_of_Guinea')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Amazon')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Amazon')$GCAM_k)
+```
+
+
+# Results
+Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
+```{r k-Histogram-full, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
+#Plot overlapping k histograms for the different k sources
+ggplot() +
+  geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
+  geom_histogram(aes(x = Full_Comparison$GCAM_k,  fill = 'GCAM'), alpha = 0.5, bins = 75) +
+  xlab(expression(k~(y^-1))) + ylab('Count') +
+  scale_fill_manual(name = "Data Source", 
+                    values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
+  theme_light() 
+
+ggsave('all_k_histogram.jpeg', path = 'Graphs')
+```
 
 The average of the difference in means between k values was also plotted, grouped by transition type:
 
@@ -487,5 +428,7 @@ ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   xlim(-0.1, 0.1) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
   theme_light() 
-```
 
+ggsave('difference_plot.jpeg', path = 'Graphs')
+ 
+```
