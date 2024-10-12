@@ -410,7 +410,7 @@ t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
 By default, R runs welch's t-test, which assumes the variances differ between
 groups. 
 
-```{r}
+```{r Get p-values by basin}
 
 basin_pval_holder <- data.frame()
 
@@ -447,7 +447,7 @@ and GCAM distributions of k is greater than 0.05, we fail to reject the hypothes
 that the mean of the distribution of k values from GCAM differs from the mean of 
 the distribution of k values from experiment. 
 
-```{r}
+```{r get the number of basins that differ based on p-value}
 
 print(paste('In:' ,
             length(which(basin_pval_holder$p.value > 0.05)),
@@ -464,7 +464,7 @@ GCAM approach validates well in these basins
 Let's take a look at the 8 basins that differ. 
 
 
-```{r}
+```{r get the differing basins}
 basin_pval_holder %>%
   filter(p.value <= 0.05) %>%
   select(basin) ->
@@ -478,98 +478,9 @@ change_long_data %>%
 ```
 
 
-
-# anovas
-
-```{r}
-summary(aov(k ~ Type * Basin_long_name * change,
-               data = change_long_data))
-```
-Means don't differ if just slice by GCAM vs experiment. They do differ if you 
-look across basins (and lumping GCAM vs experiment into the same population in 
-each basin) or look across transition types, which I think would make sense? 
-
-They don't differ if you break down by Type and Basin 
-(consistent with t-test in each basin having same means for 21 of 29 basins
-checked), but it looks like there may be some more significant differences in 
-the k-values by transition type any way that is used for grouping distributions.
-
-
-## Welch's anova
-
-Unfortunately only for one-way anova. SO we can compare the one-way test result
-for each predictor via Welch and the equal variances versions. 
-
-```{r}
-oneway.test(k ~ Type ,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ Type ,
-            data = change_long_data, var.equal = TRUE)
-
-oneway.test(k ~ Basin_long_name ,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ Basin_long_name ,
-            data = change_long_data, var.equal = TRUE)
-
-
-oneway.test(k ~ change,
-            data = change_long_data, var.equal = FALSE)
-
-oneway.test(k ~ change ,
-            data = change_long_data, var.equal = TRUE)
-```
-
-
-We do get pretty different results when we do the one-way anova across basins and
-transition types with and without the assumption of equal variances. The conclusions
-are all the same (there are significant differences, which we expect and also don't
-care about because it's not comparing GCAM to observation) but I think that means
-we don't want to rely on our three-way anova in the previous section. 
-
-The basin-by-basin t-tests however are fine, and do suggest that the GCAM approach
-is broadly consistent with experiments in 21 of 29 basins where data exists in decent quantities.
-
-## maxvar <= 4 * minvar test
-
-
-```{r}
-
-change_long_data %>%
-  group_by(Type) %>%
-  summarize(type_var = sd(k) ^2) %>%
-  ungroup ->
-  type_var
-
-change_long_data %>%
-  group_by(Basin_long_name) %>%
-  summarize(basin_var = sd(k) ^2) %>%
-  ungroup ->
-  basin_var
-
-change_long_data %>%
-  group_by(Type, Basin_long_name) %>%
-  summarize(type_basin_var = sd(k) ^2) %>%
-  ungroup ->
-  type_basin_var
-
-
-print(max(type_var$type_var) / min(type_var$type_var))
-
-
-print(max(basin_var$basin_var) / min(basin_var$basin_var))
-
-
-print(paste(max(type_basin_var$type_basin_var, na.rm = T), min(type_basin_var$type_basin_var, na.rm = T)))
-
-```
-
-
-
 # Results
 Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
-```{r k-Histogram-full, echo=FALSE, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
+```{r k-Histogram-full, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
 #Plot overlapping k histograms for the different k sources
 ggplot() +
   geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
