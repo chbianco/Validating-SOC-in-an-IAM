@@ -215,9 +215,27 @@ sd(Full_Comparison$Exp_k)
 
 mean(Full_Comparison$GCAM_k)
 sd(Full_Comparison$GCAM_k)
+
+nrow(Full_Comparison)
 ```
 
-Once the k values were calculated, t-tests, a linear-mixed model ANOVA, a non parametric Aligned Rank Transform test, and several more in depth Welch's t-tests were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
+Once the k values were calculated, t-tests, a linear-mixed model ANOVA, a non parametric Aligned Rank Transform test, and several more in depth Welch's t-tests were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. 
+
+The results of the initial t-tests are below 
+```{r t-test-Post-Kwon}
+t.test(PostKwon_Comparison$Exp_k, PostKwon_Comparison$GCAM_k, alternative = 'two.sided')
+```
+
+```{r t-test-Wei}
+t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided') 
+
+```
+
+```{r t-test-full}
+t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
+```
+
+Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
 
 ```{r Merge_Data_and_add_transition}
 Full_Comparison %>%
@@ -354,20 +372,28 @@ print(Basin_art)
 
 ```
 
+The verifying results from the Welch's t-test are below. First, for the Post & Kwon data looking at Forest to Pasture transitions
+```{r}
+Full_Comparison %>%
+  filter(source == 'Post & Kwon') %>%
+  filter(Initial_Land_Use == 'Forest') %>%
+  filter(Final_Land_Use == 'Pasture') -> PostKwon_t_data
 
-The results of the initial t-tests are below 
-```{r t-test-Post-Kwon}
-t.test(PostKwon_Comparison$Exp_k, PostKwon_Comparison$GCAM_k, alternative = 'two.sided')
+t.test(PostKwon_t_data$Exp_k, PostKwon_t_data$GCAM_k)
+```
+Now, for the nine regions in Wei et al. that showed a significant difference:
+
+```{r}
+t.test(filter(Wei_Comparison, Basin_long_name=='Philippines')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Philippines')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Ohio_River_Basin')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Ohio_River_Basin')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Niger')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Niger')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Mekong')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Mekong')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Madagascar')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Madagascar')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Brahmani')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Brahmani')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Gulf_of_Guinea')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Gulf_of_Guinea')$GCAM_k)
+t.test(filter(Wei_Comparison, Basin_long_name=='Amazon')$Exp_k, filter(Wei_Comparison, Basin_long_name=='Amazon')$GCAM_k)
 ```
 
-```{r t-test-Wei}
-t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided') 
-
-```
-
-```{r t-test-full}
-t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
-```
 
 # Results
 Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
@@ -380,6 +406,8 @@ ggplot() +
   scale_fill_manual(name = "Data Source", 
                     values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
   theme_light() 
+
+ggsave('all_k_histogram.jpeg', path = 'Graphs')
 ```
 
 The average of the difference in means between k values was also plotted, grouped by transition type:
@@ -400,3 +428,7 @@ ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   xlim(-0.1, 0.1) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
   theme_light() 
+
+ggsave('difference_plot.jpeg', path = 'Graphs')
+ 
+```
