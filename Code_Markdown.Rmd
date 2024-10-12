@@ -223,7 +223,7 @@ full_long_data %>%
 
 We also checked if the variances were equal.
 
-```{r}
+```{r check_variance}
 vars = var.test(k ~ Type, data = change_long_data)
 ```
 They were not, hence the need for the linear mixed model, non-parametric, and Welch's t-tests.
@@ -233,7 +233,7 @@ They were not, hence the need for the linear mixed model, non-parametric, and We
 Here, we just want to look at the basic characteristics of the data, and specifically filter down to basins with at least 3 data points (3 transitions of any kind).
 
 
-```{r}
+```{r Examine_data}
 knitr::kable(head(change_long_data))
 
 change_long_data %>%
@@ -268,20 +268,122 @@ knitr::kable(head(data_for_analysis))
 print( paste('Basins with at least 3 samples of any transition to validate against:', length(unique(data_for_analysis$Basin_long_name))))
 ```
 
+Then, the skewness of the data was tested. 
+
+```{r Skewness, echo = FALSE}
+#IF YOU WANT TWO TYPES, USE THIS
+Full_Comparison %>%
+  pivot_longer(cols = Exp_k:GCAM_k,
+               names_to = "Type",
+               values_to = "k") -> full_long_data 
+
+#Let's add transition type
+full_long_data %>% 
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = '')) -> change_long_data
 
 
+library(e1071)
 
-# Results
-Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
-```{r k-Histogram-full, echo=FALSE, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
-#Plot overlapping k histograms for the different k sources
-ggplot() +
-  geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
-  geom_histogram(aes(x = Full_Comparison$GCAM_k,  fill = 'GCAM'), alpha = 0.5, bins = 75) +
-  xlab(expression(k~(y^-1))) + ylab('Count') +
-  scale_fill_manual(name = "Data Source", 
-                    values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
-  theme_light() 
+current_skewness <- skewness(full_long_data$k)
+print(paste("Current Skewness:", current_skewness))
+hist(full_long_data$k)
+
+#through trial and error, 1/(k + 0.35)
+#seems about as good as we can get
+
+transformed_skewness <- skewness(1/(full_long_data$k + 0.35))
+print(paste("Transformed Skewness:", transformed_skewness))
+hist(1/(full_long_data$k + 0.35))
+
+```
+
+\newline
+After improving the skew, we can perform analysis of variance on the data, but we run into issues with multicollinearity. Here we look for the effect of land-use transition type within the Post&Kwon comparison data (which has multiple LUC types) and the effect of geography within the Wei et al comparison data (which has many basins, but only one LUC type).
+```{r Anova 1 of 2}
+library(car)
+library(emmeans)
+library(performance)
+
+#Not possible to run model with both LUC and Basin,
+#due to unequal distribution of data across
+#LUC type and Basin
+
+LUC_model <- lm(1/(k + 0.35) ~ Type * change,
+               data = change_long_data[change_long_data$source == "Post & Kwon",])
+Anova(LUC_model, type = "III")
+LUC_emm <- emmeans(LUC_model, ~ Type|change, regrid = "response")
+pairs(LUC_emm)
+
+performance::check_homogeneity(LUC_model, method = "auto")
+
+ggplot(change_long_data[change_long_data$source == "Post & Kwon",], aes(Type, k, fill = Type)) + geom_boxplot() +
+  scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#3584B0',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Post & Kwon vs GCAM by Land-Use Transition") +
+  facet_wrap(change ~.) + theme_light()
+```
+
+\newline
+GCAM k values differ from Post & Kwon values specifically for Forest to Pasture transitions.
+\newline
+
+```{r Anova 2 of 2, fig.width=10,fig.height=11}
+Basin_model <- lm(1/(k + 0.35) ~ Type * Basin_long_name,
+               data = change_long_data[change_long_data$source == "Wei et al",])
+Anova(Basin_model, type = "III")
+Basin_emm <- emmeans(Basin_model, ~ Type|Basin_long_name, regrid = "response")
+pairs(Basin_emm)
+
+performance::check_homogeneity(Basin_model, method = "auto")
+
+ggplot(change_long_data[change_long_data$source == "Wei et al",], aes(Type, k, fill = Type)) + geom_boxplot() +
+    scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#45912c',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Wei et al vs GCAM by Basin\nnote variable Y axis") +
+  facet_wrap(Basin_long_name ~., ncol = 5, scale = "free_y") + theme_light() +
+  theme(legend.position = "bottom")
+```
+
+```{r Plot of basins with significant posthoc comparison}
+change_long_data %>%
+  filter(source == "Wei et al",
+         Basin_long_name %in% c("Philippines",
+                                "Ohio_River_Basin",
+                                "Niger",
+                                "Mekong",
+                                "Madagascar",
+                                "Huang_He",
+                                "Brahmani",
+                                "Gulf_of_Guinea",
+                                "Amazon")) %>%
+  ggplot(aes(Type, k, fill = Type)) + geom_boxplot() +
+    scale_fill_manual(name = "Data Source",
+                    values = c('Exp_k'='#45912c',
+                               'GCAM_k'='#e3962b')) +
+  geom_hline(yintercept = 0, color = "red", linetype = 2) +
+  ggtitle("Wei et al vs GCAM by Basin \np < 0.05 posthoc comparisons \nnote variable Y axis") +
+  facet_wrap(Basin_long_name ~., scale = "free_y") + theme_light() +
+  theme(legend.position = "bottom")
+```
+
+```{r Results from the non-parametric test}
+
+library(ARTool)
+
+LUC_art_model <- art(1/(k + 0.35) ~ as.factor(Type) * as.factor(change),
+               data = change_long_data[change_long_data$source == "Post & Kwon",])
+LUC_art <- anova(LUC_art_model)
+print(LUC_art)
+
+Basin_art_model <- lm(1/(k + 0.35) ~ as.factor(Type) * as.factor(Basin_long_name),
+               data = change_long_data[change_long_data$source == "Wei et al",])
+Basin_art <- anova(Basin_art_model)
+print(Basin_art)
+
 ```
 
 
@@ -463,6 +565,21 @@ print(paste(max(type_basin_var$type_basin_var, na.rm = T), min(type_basin_var$ty
 
 ```
 
+
+
+# Results
+Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
+```{r k-Histogram-full, echo=FALSE, fig.cap="Histograms showing overlapping GCAM and experimental data for computed k values during land use change. Here, the experimental data is taken from both Post & Kwon and Wei et al.", message=FALSE}
+#Plot overlapping k histograms for the different k sources
+ggplot() +
+  geom_histogram(aes(x = Full_Comparison$Exp_k, fill = Full_Comparison$source), alpha = 0.5, bins = 75) +
+  geom_histogram(aes(x = Full_Comparison$GCAM_k,  fill = 'GCAM'), alpha = 0.5, bins = 75) +
+  xlab(expression(k~(y^-1))) + ylab('Count') +
+  scale_fill_manual(name = "Data Source", 
+                    values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
+  theme_light() 
+```
+
 The average of the difference in means between k values was also plotted, grouped by transition type:
 
 ```{r Mean_Difference_by_Transition}
@@ -481,5 +598,3 @@ ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   xlim(-0.1, 0.1) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
   theme_light() 
-```
-
