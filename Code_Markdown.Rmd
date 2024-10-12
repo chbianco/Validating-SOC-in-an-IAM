@@ -209,7 +209,15 @@ Duplicate_Comparison %>%
            (counts[paste(Basin_long_name, 'PostKwon')] > 1)) -> Duplicate_Comparison
 ```
 
-Once  the k values were calculated, t-tests, a linear-mixed model ANOVA, a non parametric Alighed Rank Transform test, and several more in depth Welch's t-tests were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
+```{r Mean and Standard Deviation}
+mean(Full_Comparison$Exp_k)
+sd(Full_Comparison$Exp_k)
+
+mean(Full_Comparison$GCAM_k)
+sd(Full_Comparison$GCAM_k)
+```
+
+Once the k values were calculated, t-tests, a linear-mixed model ANOVA, a non parametric Aligned Rank Transform test, and several more in depth Welch's t-tests were performed on the data to determine if there was a significant difference of the means of the empirical and GCAM k values. Before the t-tests were performed, the data had to be put in long form and a transition type column was added: 
 
 ```{r Merge_Data_and_add_transition}
 Full_Comparison %>%
@@ -227,46 +235,6 @@ We also checked if the variances were equal.
 vars = var.test(k ~ Type, data = change_long_data)
 ```
 They were not, hence the need for the linear mixed model, non-parametric, and Welch's t-tests.
-
-## Basic characteristics of data, decent number points.
-
-Here, we just want to look at the basic characteristics of the data, and specifically filter down to basins with at least 3 data points (3 transitions of any kind).
-
-
-```{r Examine_data}
-knitr::kable(head(change_long_data))
-
-change_long_data %>%
-  group_by(Basin_long_name, change, Type) %>%
-  summarise(n_points  = n()) %>%
-  ungroup %>%
-  knitr::kable(.)
-
-
-change_long_data %>%
-  group_by(Basin_long_name, 
-           #change,
-           Type) %>%
-  summarise(n_points  = n()) %>%
-  ungroup %>%
-  filter(n_points >1)  %>%
-   mutate(joint_id = paste(Basin_long_name,
-                           #change, 
-                           sep = '~')) ->
-  decent_num_points
-knitr::kable(decent_num_points)
-
-change_long_data %>%
-  mutate(joint_id = paste(Basin_long_name, 
-                          #change,
-                          sep = '~')) %>%
-  filter(joint_id %in% unique(decent_num_points$joint_id)) ->
-  data_for_analysis
-
-knitr::kable(head(data_for_analysis))
-
-print( paste('Basins with at least 3 samples of any transition to validate against:', length(unique(data_for_analysis$Basin_long_name))))
-```
 
 Then, the skewness of the data was tested. 
 
@@ -400,83 +368,6 @@ t.test(Wei_Comparison$Exp_k, Wei_Comparison$GCAM_k, alternative = 'two.sided')
 ```{r t-test-full}
 t.test(Full_Comparison$Exp_k, Full_Comparison$GCAM_k, alternative = 'two.sided')
 ```
-
-
-
-
-
-## t-tests by basin
-
-By default, R runs welch's t-test, which assumes the variances differ between
-groups. 
-
-```{r Get p-values by basin}
-
-basin_pval_holder <- data.frame()
-
-
-for (basin in unique(data_for_analysis$Basin_long_name)){
-  # print(basin)
-  
-  data_for_analysis %>% 
-    filter(Basin_long_name == basin,
-           Type == 'GCAM_k') ->
-    gcam_basin
-  
-  data_for_analysis %>% 
-    filter(Basin_long_name == basin,
-           Type == 'Exp_k') ->
-    exp_basin
-  
-  pval <- t.test(exp_basin$k, gcam_basin$k, alternative = 'two.sided')$p.value
-  
- # print(paste('two-sided alternative, t.test pvalue: ', pval))
- 
- basin_pval_holder %>%
-   bind_rows(data.frame(basin = basin, p.value = pval), .) ->
-   basin_pval_holder
-}
-
-```
-
-## interpretation
-
-So regardless of transition type, for basins with at least 3 points of any kind 
-of transition recorded, if the p value of the t.test between the experimental
-and GCAM distributions of k is greater than 0.05, we fail to reject the hypothesis
-that the mean of the distribution of k values from GCAM differs from the mean of 
-the distribution of k values from experiment. 
-
-```{r get the number of basins that differ based on p-value}
-
-print(paste('In:' ,
-            length(which(basin_pval_holder$p.value > 0.05)),
-            'of', nrow(basin_pval_holder), 
-            'basins, we fail to reject the null hypothesis that the means differ.'))
-```
-
-So it looks like across 21 of 29 basins with decent amount of data to validate, 
-GCAM and experiments, we infer the k-values are comparable, suggesting the 
-GCAM approach validates well in these basins
-
-### differing basins
-
-Let's take a look at the 8 basins that differ. 
-
-
-```{r get the differing basins}
-basin_pval_holder %>%
-  filter(p.value <= 0.05) %>%
-  select(basin) ->
-  differing_basins
-
-change_long_data %>%
-  filter(basin %in% differing_basins$basin) %>%
-  select(initial_soil_c, final_soil_c, Basin_long_name, Type, k, change) %>%
-  distinct %>% 
-  knitr::kable(.)
-```
-
 
 # Results
 Overall, GCAMs rate and k value outputs did not consistently match experimental values. 
