@@ -422,10 +422,10 @@ Full_Comparison %>%
 
 ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   geom_point(aes(size = Sample_Size), shape = 15) +
-  labs(x = 'k', y = 'Transition Type') +
+  labs(x = 'Average k', y = 'Transition Type') +
   geom_errorbar(aes(xmin=Mean_k - std_dev, xmax=Mean_k + std_dev), width=.2,
                 position=position_dodge(0.05)) +
-  xlim(-0.1, 0.1) +
+  xlim(-0.11, 0.11) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
   theme_light() 
 
