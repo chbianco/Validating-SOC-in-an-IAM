@@ -69,7 +69,7 @@ ggplot(data = total_transitions, aes(x = total_skqm_change, y = change)) +
   xlab(expression(Total~area~transitioned~(km^2))) + ylab('Transition Type') +
   theme_light() 
 
-ggsave('total_transitions_bar.jpeg', path = 'Graphs')
+ggsave('total_transitions_bar.eps', path = 'Graphs')
 
 
 

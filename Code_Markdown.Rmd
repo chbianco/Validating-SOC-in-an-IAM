@@ -407,7 +407,7 @@ ggplot() +
                     values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
   theme_light() 
 
-ggsave('all_k_histogram.jpeg', path = 'Graphs')
+ggsave('all_k_histogram.eps', path = 'Graphs')
 ```
 
 The average of the difference in means between k values was also plotted, grouped by transition type:
@@ -429,7 +429,7 @@ ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
   theme_light() 
 
-ggsave('difference_plot.jpeg', path = 'Graphs')
+ggsave('difference_plot.eps', path = 'Graphs')
  
 ```
 
