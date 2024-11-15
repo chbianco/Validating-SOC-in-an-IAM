@@ -405,7 +405,7 @@ ggplot() +
   xlab(expression(k~(y^-1))) + ylab('Count') +
   scale_fill_manual(name = "Data Source", 
                     values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
-  theme_light() 
+  theme_light(base_size = 15) 
 
 ggsave('all_k_histogram.eps', path = 'Graphs')
 ```
@@ -420,6 +420,9 @@ Full_Comparison %>%
   group_by(change) %>%
   summarise(Mean_k = mean(difference), std_dev = sd(difference), Sample_Size = n()) -> mean_difference
 
+options(repr.plot.width = 5, repr.plot.height =5) 
+
+
 ggplot(mean_difference, aes(x = Mean_k, y = change)) +
   geom_point(aes(size = Sample_Size), shape = 15) +
   labs(x = 'Average k', y = 'Transition Type') +
@@ -427,7 +430,8 @@ ggplot(mean_difference, aes(x = Mean_k, y = change)) +
                 position=position_dodge(0.05)) +
   xlim(-0.11, 0.11) +
   geom_vline(xintercept = 0, linetype = 'dashed', color = 'blue') +
-  theme_light() 
+  theme_light(base_size = 15)
+ 
 
 ggsave('difference_plot.eps', path = 'Graphs')
  
