@@ -508,3 +508,23 @@ rmap::map(location_freq_data,
           )
 ```
 
+```{r Scatterplot by transition type}
+#Making a scatterplot with all the data
+Full_Comparison %>%
+  mutate(change = paste(Initial_Land_Use, Final_Land_Use, sep = ' to ')) -> Full_scatterplot
+
+ggplot(Full_scatterplot, aes(x = Exp_k, y = GCAM_k, color = change)) +
+  geom_point() +  # Add points to the scatterplot
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "blue") +  
+  theme_light(base_size = 15) +
+  labs(x = "Empirical k", y = "GCAM k", color = "Change") +
+  coord_equal(ratio = 5) +
+  coord_cartesian(xlim = c(NA, 0.4))
+
+
+
+ggsave('difference_scatter.png', path = 'Graphs')
+
+```
+
+
