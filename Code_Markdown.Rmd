@@ -523,7 +523,7 @@ ggplot(Full_scatterplot, aes(x = Exp_k, y = GCAM_k, color = change)) +
 
 
 
-ggsave('difference_scatter.png', path = 'Graphs')
+ggsave('difference_scatter.eps', path = 'Graphs')
 
 ```
 
