@@ -405,9 +405,10 @@ ggplot() +
   xlab(expression(k~(y^-1))) + ylab('Count') +
   scale_fill_manual(name = "Data Source", 
                     values = c('GCAM'='#e3962b', 'Wei et al' = '#45912c', 'Post & Kwon' = '#3584B0')) +
-  theme_light(base_size = 15) 
+  theme_light(base_size = 15) + 
+    xlim(-0.05, 0.4)
 
-ggsave('all_k_histogram.eps', path = 'Graphs')
+ggsave('all_k_histogram.jpeg', path = 'Graphs')
 ```
 
 The average of the difference in means between k values was also plotted, grouped by transition type:
